@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join the Cohort — Claude Certified Architect</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111111;
+    --paper: #ffffff;
+    --accent: #d4622b;
+    --accent-glow: #e8793f;
+    --muted: #777777;
+    --card-bg: #f8f8f8;
+    --border: #e5e5e5;
+    --slot-filled: #d4622b;
+    --slot-open: #e9e9e9;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+  }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.4); } }
+  @keyframes slotPulse {
+    0%, 100% { border-color: #ccc; background: var(--slot-open); }
+    50% { border-color: var(--accent); background: #d4622b15; }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-bottom: 32px;
+    animation: fadeDown 0.6s ease-out;
+  }
+
+  .badge .dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(34px, 7vw, 52px);
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    margin-bottom: 20px;
+    animation: fadeUp 0.7s ease-out 0.1s both;
+  }
+
+  h1 .highlight { color: var(--accent); }
+
+  .subtitle {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--muted);
+    max-width: 560px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.7s ease-out 0.2s both;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+  }
+
+  /* Slots */
+  .slots-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 36px;
+    animation: fadeUp 0.7s ease-out 0.3s both;
+  }
+
+  .slots-grid { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+
+  .slot {
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+
+  .slot.filled { background: var(--slot-filled); color: white; }
+
+  .slot.open {
+    background: var(--slot-open); color: var(--muted);
+    border: 2px dashed #ccc;
+    animation: slotPulse 3s ease-in-out infinite;
+  }
+
+  .slot.open:nth-child(6) { animation-delay: 0s; }
+  .slot.open:nth-child(7) { animation-delay: 0.3s; }
+  .slot.open:nth-child(8) { animation-delay: 0.6s; }
+  .slot.open:nth-child(9) { animation-delay: 0.9s; }
+  .slot.open:nth-child(10) { animation-delay: 1.2s; }
+
+  .slots-count { font-size: 15px; }
+  .slots-count strong { color: var(--accent); font-weight: 700; }
+
+  /* How It Works */
+  .how-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.4s both; }
+
+  .step {
+    display: flex; gap: 16px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    background: var(--ink); color: var(--paper);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; margin-top: 2px;
+  }
+
+  .step-content { flex: 1; }
+  .step-content strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .step-content p { font-size: 14px; line-height: 1.55; color: #555; }
+  .step-content a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .step-content a:hover { text-decoration: underline; }
+
+  /* Timeline */
+  .timeline-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 36px;
+    animation: fadeUp 0.7s ease-out 0.5s both;
+  }
+
+  .timeline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .timeline-item {
+    padding: 16px; background: var(--paper);
+    border-radius: 8px; border: 1px solid var(--border);
+  }
+
+  .timeline-item .phase {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 6px;
+  }
+
+  .timeline-item .when { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 4px; }
+  .timeline-item .desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* What You Get */
+  .what-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.55s both; }
+
+  .what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .what-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+  }
+
+  .what-card .emoji { font-size: 22px; margin-bottom: 8px; }
+  .what-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .what-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* Links */
+  .links-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.6s both; }
+
+  .link-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .link-row:last-child { border-bottom: none; }
+
+  .link-info { flex: 1; }
+  .link-info strong { display: block; font-size: 15px; margin-bottom: 2px; }
+  .link-info span { font-size: 13px; color: var(--muted); }
+
+  .link-btn {
+    flex-shrink: 0;
+    display: inline-block;
+    background: var(--ink); color: var(--paper);
+    font-size: 12px; font-weight: 700;
+    text-decoration: none;
+    padding: 8px 16px; border-radius: 6px;
+    letter-spacing: 0.5px; transition: all 0.2s;
+  }
+  .link-btn:hover { background: var(--accent); }
+
+  /* CTA */
+  .cta-section { text-align: center; padding: 36px 0; animation: fadeUp 0.7s ease-out 0.65s both; }
+
+  .cta-btn {
+    display: inline-block;
+    background: var(--accent); color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 700;
+    text-decoration: none;
+    padding: 16px 44px; border-radius: 8px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px #d4622b25;
+  }
+
+  .cta-btn:hover {
+    background: var(--accent-glow);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px #d4622b35;
+  }
+
+  .cta-sub { font-size: 14px; color: var(--muted); margin-top: 12px; }
+
+  /* Note */
+  .note {
+    background: var(--card-bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 10px 10px 0;
+    padding: 24px;
+    animation: fadeUp 0.7s ease-out 0.7s both;
+  }
+
+  .note-header {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+
+  .note p { font-size: 15px; line-height: 1.65; color: #444; }
+  .note .sig { margin-top: 14px; font-weight: 700; color: var(--ink); }
+
+  @media (max-width: 520px) {
+    .container { padding: 32px 18px 48px; }
+    .slots-grid { gap: 6px; }
+    .slot { width: 44px; height: 44px; font-size: 12px; }
+    .timeline-grid, .what-grid { grid-template-columns: 1fr; }
+    .slots-section, .timeline-section, .note { padding: 20px; }
+    .link-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="badge"><span class="dot"></span> 5 Spots Left</div>
+
+  <h1>Get <span class="highlight">Claude Certified</span> with me.</h1>
+
+  <p class="subtitle">I'm building a cohort of 10 people to study for and take the Claude Certified Architect exam together. The coursework is free. The certification is issued by Anthropic. Five people are already in — I'm looking for five more.</p>
+
+  <!-- Slots -->
+  <div class="slots-section">
+    <div class="section-label">Cohort Seats</div>
+    <div class="slots-grid">
+      <div class="slot filled">✓</div>
+      <div class="slot filled">✓</div>
+      <div class="slot filled">✓</div>
+      <div class="slot filled">✓</div>
+      <div class="slot filled">✓</div>
+      <div class="slot open">6</div>
+      <div class="slot open">7</div>
+      <div class="slot open">8</div>
+      <div class="slot open">9</div>
+      <div class="slot open">10</div>
+    </div>
+    <p class="slots-count"><strong>5 spots remaining.</strong> Once we're full, the window closes.</p>
+  </div>
+
+  <!-- How It Works -->
+  <div class="how-section">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Tell me you're in</strong>
+          <p>Text or message me. That's it — I'll lock your slot and add you to our group chat.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Start the free courses</strong>
+          <p>Work through the courses on <a href="https://www.anthropic.com/learn" target="_blank">Anthropic Academy</a> at your own pace. Start with <a href="https://anthropic.skilljar.com/introduction-to-claude-cowork" target="_blank">Claude 101</a>, then <a href="https://anthropic.skilljar.com/claude-code-in-action" target="_blank">Claude Code in Action</a>, then <a href="https://claudecertifications.com/courses/ai-fluency-foundations" target="_blank">AI Fluency Foundations</a>. All free. All online.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Study as a crew</strong>
+          <p>We'll have a group chat for questions, study notes, and accountability. I've been through the material — I'll help you navigate it.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <strong>Prep for the exam</strong>
+          <p>The exam is multiple choice, scenario-based. Five domains, passing score 720/1000. We'll run through <a href="https://claudecertifications.com/claude-certified-architect/practice-questions" target="_blank">practice questions</a> and <a href="https://claudecertifications.com/claude-certified-architect/exam-guide" target="_blank">scenario walkthroughs</a> together.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <strong>Get certified</strong>
+          <p>Earn the <strong>Claude Certified Architect – Foundations</strong> credential issued by Anthropic. Add it to LinkedIn, your resume, your life.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline-section">
+    <div class="section-label">Timeline — ~12 Weeks Total</div>
+    <div class="timeline-grid">
+      <div class="timeline-item">
+        <div class="phase">Now</div>
+        <div class="when">April</div>
+        <div class="desc">Lock in your spot. Start courses whenever you're ready.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Weeks 1–6</div>
+        <div class="when">Apr – May</div>
+        <div class="desc">Complete the three core courses. Share progress in the group.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Weeks 7–10</div>
+        <div class="when">June</div>
+        <div class="desc">Exam prep. Practice questions, scenario drills, review sessions.</div>
+      </div>
+      <div class="timeline-item">
+        <div class="phase">Target</div>
+        <div class="when">Late June</div>
+        <div class="desc">We all sit for the exam. Celebrate after.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What You Get -->
+  <div class="what-section">
+    <h2>What you're getting</h2>
+    <div class="what-grid">
+      <div class="what-card">
+        <div class="emoji">🎓</div>
+        <strong>Official Credential</strong>
+        <p>Issued by Anthropic — the company behind Claude. This is their certification program.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">💰</div>
+        <strong>Free Coursework</strong>
+        <p>All three courses are 100% free on Anthropic Academy. No paywall, no catch.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">🧠</div>
+        <strong>AI Fluency</strong>
+        <p>Learn prompt engineering, agentic systems, and how to actually use AI — not just talk about it.</p>
+      </div>
+      <div class="what-card">
+        <div class="emoji">👥</div>
+        <strong>Built-in Crew</strong>
+        <p>You're not doing this alone. Ten people, one group chat, mutual accountability.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Links -->
+  <div class="links-section">
+    <div class="section-label">Resources — Start Here</div>
+    <div class="link-row">
+      <div class="link-info">
+        <strong>Anthropic Academy</strong>
+        <span>Where you'll take the free courses</span>
+      </div>
+      <a href="https://www.anthropic.com/learn" target="_blank" class="link-btn">Open →</a>
+    </div>
+    <div class="link-row">
+      <div class="link-info">
+        <strong>Certification Exam Guide</strong>
+        <span>What the exam covers, format, and how to pass</span>
+      </div>
+      <a href="https://claudecertifications.com/claude-certified-architect/exam-guide" target="_blank" class="link-btn">Open →</a>
+    </div>
+    <div class="link-row">
+      <div class="link-info">
+        <strong>12-Week Study Plan</strong>
+        <span>Structured prep covering all 5 exam domains</span>
+      </div>
+      <a href="https://claudecertifications.com/claude-certified-architect/study-guide" target="_blank" class="link-btn">Open →</a>
+    </div>
+    <div class="link-row">
+      <div class="link-info">
+        <strong>Practice Questions</strong>
+        <span>33+ questions with explanations</span>
+      </div>
+      <a href="https://claudecertifications.com/claude-certified-architect/practice-questions" target="_blank" class="link-btn">Open →</a>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <a href="https://www.anthropic.com/learn" class="cta-btn" target="_blank">Start the Free Courses →</a>
+    <p class="cta-sub">Then text me to lock in your spot.</p>
+  </div>
+
+  <!-- Note from Eddie -->
+  <div class="note">
+    <div class="note-header">From Eddie</div>
+    <p>I've been building with Claude for over a year and just got accepted into the Claude Partner Network. This certification is where AI is headed — it's the kind of credential that ages well. The course teaches you everything from scratch. You don't need to be technical. You just need to be curious and willing to put in the time. I want the people I know to be ahead of this curve, not behind it.</p>
+    <p class="sig">— Eddie Belaval, ID8Labs</p>
+  </div>
+
+</div>
+
+</body>
+</html>
