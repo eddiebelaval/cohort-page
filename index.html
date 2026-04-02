@@ -706,6 +706,8 @@
   function getStreak(memberId) {
     var dates = memberId ? (state.activityByMember[memberId] || {}) : state.activityByDate;
     var streak = 0, d = new Date();
+    // If no activity today, start counting from yesterday
+    if (!dates[toDateKey(d)]) d.setDate(d.getDate() - 1);
     while (dates[toDateKey(d)]) { streak++; d.setDate(d.getDate() - 1); }
     return streak;
   }
