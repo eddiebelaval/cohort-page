@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Join the Cohort — Claude Certified Architect</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --ink: #111111;
@@ -16,6 +17,15 @@
     --border: #e5e5e5;
     --slot-filled: #d4622b;
     --slot-open: #e9e9e9;
+    --green: #22c55e;
+    --green-muted: #dcfce7;
+    --yellow-bg: #fef3c7;
+    --yellow-text: #92400e;
+    --streak-0: #eeeeee;
+    --streak-1: #fed7aa;
+    --streak-2: #fb923c;
+    --streak-3: #ea580c;
+    --streak-4: #9a3412;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -110,7 +120,6 @@
     margin-bottom: 16px;
   }
 
-  /* Slots */
   .slots-section {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -146,7 +155,17 @@
   .slots-count { font-size: 15px; }
   .slots-count strong { color: var(--accent); font-weight: 700; }
 
-  /* How It Works */
+  .cert-section { margin-bottom: 40px; animation: fadeUp 0.7s ease-out 0.35s both; }
+  .cert-section h2 { margin-bottom: 14px; }
+  .cert-intro { font-size: 15px; line-height: 1.7; color: #555; margin-bottom: 24px; }
+  .cert-domains { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; margin-bottom: 20px; }
+  .cert-domain { font-size: 14px; color: #444; padding: 0; display: flex; align-items: baseline; gap: 8px; }
+  .cert-domain-weight { font-size: 11px; font-weight: 700; color: var(--accent); min-width: 32px; }
+  .cert-domain-name { font-weight: 500; }
+  .cert-details { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .cert-detail { font-size: 13px; color: var(--muted); }
+  .cert-detail strong { color: var(--ink); font-weight: 600; }
+
   .how-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.4s both; }
 
   .step {
@@ -171,7 +190,6 @@
   .step-content a { color: var(--accent); text-decoration: none; font-weight: 600; }
   .step-content a:hover { text-decoration: underline; }
 
-  /* Timeline */
   .timeline-section {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -197,7 +215,6 @@
   .timeline-item .when { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 4px; }
   .timeline-item .desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
-  /* What You Get */
   .what-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.55s both; }
 
   .what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -208,11 +225,9 @@
     border-radius: 10px; padding: 20px;
   }
 
-  .what-card .emoji { font-size: 22px; margin-bottom: 8px; }
   .what-card strong { display: block; font-size: 14px; margin-bottom: 4px; }
   .what-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
 
-  /* Links */
   .links-section { margin-bottom: 36px; animation: fadeUp 0.7s ease-out 0.6s both; }
 
   .link-row {
@@ -237,7 +252,6 @@
   }
   .link-btn:hover { background: var(--accent); }
 
-  /* CTA */
   .cta-section { text-align: center; padding: 36px 0; animation: fadeUp 0.7s ease-out 0.65s both; }
 
   .cta-btn {
@@ -259,7 +273,6 @@
 
   .cta-sub { font-size: 14px; color: var(--muted); margin-top: 12px; }
 
-  /* Note */
   .note {
     background: var(--card-bg);
     border-left: 3px solid var(--accent);
@@ -277,13 +290,135 @@
   .note p { font-size: 15px; line-height: 1.65; color: #444; }
   .note .sig { margin-top: 14px; font-weight: 700; color: var(--ink); }
 
+  /* ═══════════════════════════════════════════
+     WORKSPACE — Nothing Style
+     ═══════════════════════════════════════════ */
+
+  .workspace { padding-bottom: 80px; margin-top: 8px; }
+  .workspace .container { padding-top: 40px; padding-bottom: 32px; border-top: 1px solid var(--ink); }
+
+  /* Tab Bar: text-only, underline indicator */
+  .tab-bar {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 10px 20px 12px; font-size: 13px; font-weight: 500;
+    color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: color 0.15s; user-select: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    letter-spacing: 0.2px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+  .tab.add-tab { color: var(--accent); font-size: 16px; font-weight: 600; padding: 8px 16px 12px; }
+  .tab.add-tab:hover { color: var(--accent-glow); }
+
+  /* Stat Grid: open layout, no card backgrounds */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 36px; }
+  .stat-card { padding: 20px 0; text-align: center; border-right: 1px solid var(--border); }
+  .stat-card:last-child { border-right: none; }
+  .stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; letter-spacing: -1.5px; margin-bottom: 4px; color: var(--ink); }
+  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+  /* Heatmap: tighter, more subtle */
+  .heatmap-section { margin-bottom: 32px; }
+  .heatmap-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 2px; max-width: calc(7 * 12px + 6 * 2px); }
+  .heatmap-cell { width: 12px; height: 12px; border-radius: 2px; background: var(--streak-0); }
+  .heatmap-cell.l1 { background: var(--streak-1); }
+  .heatmap-cell.l2 { background: var(--streak-2); }
+  .heatmap-cell.l3 { background: var(--streak-3); }
+  .heatmap-cell.l4 { background: var(--streak-4); }
+
+  /* Member List: borderless rows, hairline separators */
+  .member-list { margin-bottom: 32px; }
+  .member-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .member-row:last-child { border-bottom: none; }
+  .member-row:hover { padding-left: 4px; }
+  .member-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .member-name { font-weight: 500; font-size: 14px; flex: 1; min-width: 0; letter-spacing: 0.1px; }
+  .member-last-active { font-size: 11px; color: var(--muted); white-space: nowrap; letter-spacing: 0.3px; }
+  .member-streak { display: flex; gap: 2px; align-items: center; flex-shrink: 0; }
+  .streak-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--streak-0); }
+  .streak-dot.active { background: var(--streak-3); }
+  .member-streak-count { font-size: 11px; font-weight: 700; color: var(--accent); margin-left: 6px; min-width: 16px; }
+  .member-progress-bar { width: 48px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .member-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+  /* BLUF Bar: open, no cards */
+  .bluf-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 36px; }
+  .bluf-item { padding: 16px 0; text-align: center; border-right: 1px solid var(--border); }
+  .bluf-item:last-child { border-right: none; }
+  .bluf-value { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .bluf-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+  /* Course Blocks: no card, just typography and structure */
+  .course-block { padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .course-block:last-of-type { border-bottom: none; }
+  .course-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; }
+  .course-title { font-weight: 600; font-size: 14px; letter-spacing: 0.2px; }
+  .course-title a { color: var(--ink); text-decoration: none; }
+  .course-title a:hover { color: var(--accent); }
+  .course-badge { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; padding: 2px 0; border-radius: 0; background: none; }
+  .course-badge.done { color: var(--green); }
+  .course-badge.in-progress { color: var(--yellow-text); }
+  .course-badge.not-started { color: var(--muted); }
+
+  .course-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+  .check { width: 18px; height: 18px; min-width: 18px; border: 1.5px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; font-size: 11px; color: transparent; user-select: none; }
+  .check:hover { border-color: var(--ink); }
+  .check.done { background: var(--ink); border-color: var(--ink); color: white; }
+  .check.readonly { cursor: default; opacity: 0.5; }
+  .check.readonly:hover { border-color: var(--border); }
+  .course-item-label { font-size: 14px; color: var(--muted); flex: 1; }
+  .course-item-label a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+  .course-item-label a:hover { color: var(--ink); }
+
+  /* Exam Prep: barely there */
+  .exam-prep { padding: 24px 0 0; margin-bottom: 0; border: none; }
+  .exam-prep-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; letter-spacing: 0.2px; }
+  .exam-prep-link { display: block; padding: 6px 0; font-size: 13px; }
+  .exam-prep-link a { color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.15s; }
+  .exam-prep-link a:hover { color: var(--accent); }
+
+  /* Notes: minimal container */
+  .notes-section { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .notes-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .notes-title { font-weight: 600; font-size: 14px; letter-spacing: 0.2px; }
+  .notes-badge { font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .notes-box { width: 100%; min-height: 100px; padding: 16px 0; font-family: 'DM Sans', sans-serif; font-size: 14px; line-height: 1.7; color: var(--ink); background: transparent; border: none; border-bottom: 1px solid var(--border); border-radius: 0; resize: none; transition: border-color 0.15s; }
+  .notes-box:focus { outline: none; border-bottom-color: var(--ink); }
+  .notes-readonly { padding: 16px 0; font-size: 14px; line-height: 1.7; color: #555; min-height: 40px; white-space: pre-wrap; }
+  .notes-empty { color: var(--muted); font-style: italic; }
+
   @media (max-width: 520px) {
     .container { padding: 32px 18px 48px; }
     .slots-grid { gap: 6px; }
     .slot { width: 44px; height: 44px; font-size: 12px; }
-    .timeline-grid, .what-grid { grid-template-columns: 1fr; }
+    .timeline-grid, .what-grid, .cert-domains { grid-template-columns: 1fr; }
     .slots-section, .timeline-section, .note { padding: 20px; }
     .link-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .stat-card { border-bottom: 1px solid var(--border); }
+    .stat-card:nth-child(even) { border-right: none; }
+    .bluf-bar { grid-template-columns: 1fr; }
+    .bluf-item { border-right: none; border-bottom: 1px solid var(--border); }
+    .bluf-item:last-child { border-bottom: none; }
+    .tab-bar { gap: 0; }
+    .tab { padding: 8px 14px 10px; font-size: 12px; }
+    .member-row { flex-wrap: wrap; }
+    .member-streak { order: 3; width: 100%; margin-top: 4px; }
+    .heatmap-grid { overflow-x: auto; }
   }
 </style>
 </head>
@@ -291,31 +426,36 @@
 
 <div class="container">
 
-  <div class="badge"><span class="dot"></span> 5 Spots Left</div>
+  <div class="badge" id="badge"><span class="dot"></span> 10 Spots Left</div>
 
   <h1>Get <span class="highlight">Claude Certified</span> with me.</h1>
 
-  <p class="subtitle">I'm building a cohort of 10 people to study for and take the Claude Certified Architect exam together. The coursework is free. The certification is issued by Anthropic. Five people are already in — I'm looking for five more.</p>
+  <p class="subtitle">I'm building a cohort of 10 people to study for and take the Claude Certified Architect exam together. The coursework is free. The certification is issued by Anthropic. I'm looking for ten people who want in.</p>
 
-  <!-- Slots -->
   <div class="slots-section">
     <div class="section-label">Cohort Seats</div>
-    <div class="slots-grid">
-      <div class="slot filled">✓</div>
-      <div class="slot filled">✓</div>
-      <div class="slot filled">✓</div>
-      <div class="slot filled">✓</div>
-      <div class="slot filled">✓</div>
-      <div class="slot open">6</div>
-      <div class="slot open">7</div>
-      <div class="slot open">8</div>
-      <div class="slot open">9</div>
-      <div class="slot open">10</div>
-    </div>
-    <p class="slots-count"><strong>5 spots remaining.</strong> Once we're full, the window closes.</p>
+    <div class="slots-grid" id="slots-grid"></div>
+    <p class="slots-count" id="slots-count"></p>
   </div>
 
-  <!-- How It Works -->
+  <div class="cert-section">
+    <h2>The certification</h2>
+    <p class="cert-intro">The Claude Certified Architect is Anthropic's official technical certification for people building with Claude. It's scenario-based, covers five domains, and is recognized across the Claude partner ecosystem. The exam and all prep coursework are free.</p>
+    <ul class="cert-domains">
+      <li class="cert-domain"><span class="cert-domain-weight">25%</span><span class="cert-domain-name">Agentic Architecture</span></li>
+      <li class="cert-domain"><span class="cert-domain-weight">20%</span><span class="cert-domain-name">Tool Design and MCP</span></li>
+      <li class="cert-domain"><span class="cert-domain-weight">20%</span><span class="cert-domain-name">Claude Code Workflows</span></li>
+      <li class="cert-domain"><span class="cert-domain-weight">20%</span><span class="cert-domain-name">Prompt Engineering</span></li>
+      <li class="cert-domain"><span class="cert-domain-weight">15%</span><span class="cert-domain-name">Context and Reliability</span></li>
+    </ul>
+    <div class="cert-details">
+      <div class="cert-detail"><strong>Format:</strong> Scenario-based multiple choice</div>
+      <div class="cert-detail"><strong>Passing:</strong> 720 / 1000</div>
+      <div class="cert-detail"><strong>Cost:</strong> Free</div>
+      <div class="cert-detail"><strong>Issued by:</strong> Anthropic</div>
+    </div>
+  </div>
+
   <div class="how-section">
     <h2>How it works</h2>
     <div class="steps">
@@ -323,7 +463,7 @@
         <div class="step-num">1</div>
         <div class="step-content">
           <strong>Tell me you're in</strong>
-          <p>Text or message me. That's it — I'll lock your slot and add you to our group chat.</p>
+          <p>Text or message me. That's it. I'll lock your slot and add you to our group chat.</p>
         </div>
       </div>
       <div class="step">
@@ -337,7 +477,7 @@
         <div class="step-num">3</div>
         <div class="step-content">
           <strong>Study as a crew</strong>
-          <p>We'll have a group chat for questions, study notes, and accountability. I've been through the material — I'll help you navigate it.</p>
+          <p>We'll have a group chat for questions, study notes, and accountability. I've been through the material. I'll help you navigate it.</p>
         </div>
       </div>
       <div class="step">
@@ -351,15 +491,14 @@
         <div class="step-num">5</div>
         <div class="step-content">
           <strong>Get certified</strong>
-          <p>Earn the <strong>Claude Certified Architect – Foundations</strong> credential issued by Anthropic. Add it to LinkedIn, your resume, your life.</p>
+          <p>Earn the <strong>Claude Certified Architect</strong> credential issued by Anthropic. Add it to LinkedIn, your resume, your life.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Timeline -->
   <div class="timeline-section">
-    <div class="section-label">Timeline — ~12 Weeks Total</div>
+    <div class="section-label">Timeline</div>
     <div class="timeline-grid">
       <div class="timeline-item">
         <div class="phase">Now</div>
@@ -367,12 +506,12 @@
         <div class="desc">Lock in your spot. Start courses whenever you're ready.</div>
       </div>
       <div class="timeline-item">
-        <div class="phase">Weeks 1–6</div>
-        <div class="when">Apr – May</div>
+        <div class="phase">Weeks 1-6</div>
+        <div class="when">Apr - May</div>
         <div class="desc">Complete the three core courses. Share progress in the group.</div>
       </div>
       <div class="timeline-item">
-        <div class="phase">Weeks 7–10</div>
+        <div class="phase">Weeks 7-10</div>
         <div class="when">June</div>
         <div class="desc">Exam prep. Practice questions, scenario drills, review sessions.</div>
       </div>
@@ -384,80 +523,629 @@
     </div>
   </div>
 
-  <!-- What You Get -->
   <div class="what-section">
     <h2>What you're getting</h2>
     <div class="what-grid">
       <div class="what-card">
-        <div class="emoji">🎓</div>
         <strong>Official Credential</strong>
-        <p>Issued by Anthropic — the company behind Claude. This is their certification program.</p>
+        <p>Issued by Anthropic, the company behind Claude. This is their certification program.</p>
       </div>
       <div class="what-card">
-        <div class="emoji">💰</div>
         <strong>Free Coursework</strong>
         <p>All three courses are 100% free on Anthropic Academy. No paywall, no catch.</p>
       </div>
       <div class="what-card">
-        <div class="emoji">🧠</div>
         <strong>AI Fluency</strong>
-        <p>Learn prompt engineering, agentic systems, and how to actually use AI — not just talk about it.</p>
+        <p>Learn prompt engineering, agentic systems, and how to actually use AI, not just talk about it.</p>
       </div>
       <div class="what-card">
-        <div class="emoji">👥</div>
         <strong>Built-in Crew</strong>
         <p>You're not doing this alone. Ten people, one group chat, mutual accountability.</p>
       </div>
     </div>
   </div>
 
-  <!-- Links -->
   <div class="links-section">
-    <div class="section-label">Resources — Start Here</div>
+    <div class="section-label">Resources</div>
     <div class="link-row">
       <div class="link-info">
         <strong>Anthropic Academy</strong>
         <span>Where you'll take the free courses</span>
       </div>
-      <a href="https://www.anthropic.com/learn" target="_blank" class="link-btn">Open →</a>
+      <a href="https://www.anthropic.com/learn" target="_blank" class="link-btn">Open</a>
     </div>
     <div class="link-row">
       <div class="link-info">
         <strong>Certification Exam Guide</strong>
         <span>What the exam covers, format, and how to pass</span>
       </div>
-      <a href="https://claudecertifications.com/claude-certified-architect/exam-guide" target="_blank" class="link-btn">Open →</a>
+      <a href="https://claudecertifications.com/claude-certified-architect/exam-guide" target="_blank" class="link-btn">Open</a>
     </div>
     <div class="link-row">
       <div class="link-info">
         <strong>12-Week Study Plan</strong>
         <span>Structured prep covering all 5 exam domains</span>
       </div>
-      <a href="https://claudecertifications.com/claude-certified-architect/study-guide" target="_blank" class="link-btn">Open →</a>
+      <a href="https://claudecertifications.com/claude-certified-architect/study-guide" target="_blank" class="link-btn">Open</a>
     </div>
     <div class="link-row">
       <div class="link-info">
         <strong>Practice Questions</strong>
         <span>33+ questions with explanations</span>
       </div>
-      <a href="https://claudecertifications.com/claude-certified-architect/practice-questions" target="_blank" class="link-btn">Open →</a>
+      <a href="https://claudecertifications.com/claude-certified-architect/practice-questions" target="_blank" class="link-btn">Open</a>
     </div>
   </div>
 
-  <!-- CTA -->
   <div class="cta-section">
-    <a href="https://www.anthropic.com/learn" class="cta-btn" target="_blank">Start the Free Courses →</a>
+    <a href="https://www.anthropic.com/learn" class="cta-btn" target="_blank">Start the Free Courses</a>
     <p class="cta-sub">Then text me to lock in your spot.</p>
   </div>
 
-  <!-- Note from Eddie -->
   <div class="note">
     <div class="note-header">From Eddie</div>
-    <p>I've been building with Claude for over a year and just got accepted into the Claude Partner Network. This certification is where AI is headed — it's the kind of credential that ages well. The course teaches you everything from scratch. You don't need to be technical. You just need to be curious and willing to put in the time. I want the people I know to be ahead of this curve, not behind it.</p>
-    <p class="sig">— Eddie Belaval, ID8Labs</p>
+    <p>I've been building with Claude for over a year and just got accepted into the Claude Partner Network. This certification is where AI is headed. It's the kind of credential that ages well. The course teaches you everything from scratch. You don't need to be technical. You just need to be curious and willing to put in the time. I want the people I know to be ahead of this curve, not behind it.</p>
+    <p class="sig">Eddie Belaval, id8Labs</p>
   </div>
 
 </div>
+
+<!-- WORKSPACE -->
+<div class="workspace" id="workspace">
+  <div class="container">
+    <div class="tab-bar" id="tab-bar"></div>
+    <div id="workspace-content"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // Supabase
+  var SUPABASE_URL = 'https://rlzacttzdhmzypgjccri.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsemFjdHR6ZGhtenlwZ2pjY3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODUxNDUsImV4cCI6MjA3NjA2MTE0NX0.3CctSlxwFg7ywUdJxSYyPrYtsc2SMeFEs08wru7kueo';
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var AVATAR_COLORS = ['#d4622b','#7c3aed','#0891b2','#16a34a','#dc2626','#ca8a04','#6366f1','#ec4899','#14b8a6','#f97316'];
+
+  var CURRICULUM = [
+    { course: 'Claude 101', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
+      { key: 'c101_intro', label: 'Introduction to Claude' },
+      { key: 'c101_prompts', label: 'Prompt Engineering Basics' },
+      { key: 'c101_tools', label: 'Working with Tools' },
+      { key: 'c101_best', label: 'Best Practices' }
+    ]},
+    { course: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', items: [
+      { key: 'cca_start', label: 'Getting Started' },
+      { key: 'cca_codegen', label: 'Code Generation' },
+      { key: 'cca_debug', label: 'Debugging with Claude' },
+      { key: 'cca_advanced', label: 'Advanced Patterns' }
+    ]},
+    { course: 'AI Fluency Foundations', url: 'https://claudecertifications.com/courses/ai-fluency-foundations', items: [
+      { key: 'aif_fundamentals', label: 'AI Fundamentals' },
+      { key: 'aif_agentic', label: 'Agentic Systems' },
+      { key: 'aif_architecture', label: 'Architecture Patterns' },
+      { key: 'aif_exam', label: 'Exam Prep' }
+    ]}
+  ];
+
+  var EXAM_RESOURCES = [
+    { label: 'Practice Questions', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions' },
+    { label: 'Exam Guide', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide' },
+    { label: 'Study Guide', url: 'https://claudecertifications.com/claude-certified-architect/study-guide' }
+  ];
+
+  var ALL_ITEM_KEYS = [];
+  CURRICULUM.forEach(function(c) { c.items.forEach(function(i) { ALL_ITEM_KEYS.push(i.key); }); });
+
+  // State
+  var state = {
+    members: [], activity: [], progress: [], notes: [],
+    currentTab: 'dashboard',
+    myMemberId: localStorage.getItem('cohort_member_id')
+  };
+
+  // Data layer
+  function fetchAll() {
+    var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 56);
+    var cutoffStr = cutoff.toISOString().slice(0, 10);
+    return Promise.all([
+      sb.from('members').select('*').order('created_at'),
+      sb.from('activity').select('member_id,activity_date,activity_type').gte('activity_date', cutoffStr),
+      sb.from('progress').select('member_id,item_key,completed'),
+      sb.from('notes').select('*')
+    ]).then(function(results) {
+      state.members = results[0].data || [];
+      state.activity = results[1].data || [];
+      state.progress = results[2].data || [];
+      state.notes = results[3].data || [];
+      buildIndexes();
+    });
+  }
+
+  function verifyIdentity() {
+    if (!state.myMemberId) return Promise.resolve();
+    var exists = state.members.some(function(m) { return m.id === state.myMemberId; });
+    if (!exists) {
+      localStorage.removeItem('cohort_member_id');
+      state.myMemberId = null;
+    }
+    return Promise.resolve();
+  }
+
+  // Helpers
+  function toDateKey(d) { return d.toISOString().slice(0, 10); }
+  function safeColor(c) { return /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#999999'; }
+
+  function isItemDone(memberId, itemKey) {
+    return state.progressIndex[memberId + ':' + itemKey] || false;
+  }
+
+  // Build indexes after each fetch for O(1) lookups
+  function buildIndexes() {
+    state.progressIndex = {};
+    state.progress.forEach(function(p) {
+      if (p.completed) state.progressIndex[p.member_id + ':' + p.item_key] = true;
+    });
+    state.activityByMember = {};
+    state.activityByDate = {};
+    state.activity.forEach(function(a) {
+      if (!state.activityByMember[a.member_id]) state.activityByMember[a.member_id] = {};
+      state.activityByMember[a.member_id][a.activity_date] = true;
+      if (!state.activityByDate[a.activity_date]) state.activityByDate[a.activity_date] = {};
+      state.activityByDate[a.activity_date][a.member_id] = true;
+    });
+  }
+
+  function getMemberProgress(memberId) {
+    var done = ALL_ITEM_KEYS.filter(function(k) { return isItemDone(memberId, k); }).length;
+    return { done: done, total: ALL_ITEM_KEYS.length };
+  }
+
+  function getStreak(memberId) {
+    var dates = memberId ? (state.activityByMember[memberId] || {}) : state.activityByDate;
+    var streak = 0, d = new Date();
+    while (dates[toDateKey(d)]) { streak++; d.setDate(d.getDate() - 1); }
+    return streak;
+  }
+
+  function getLastActive(memberId) {
+    var dates = Object.keys(state.activityByMember[memberId] || {}).sort();
+    return dates.length ? dates[dates.length - 1] : null;
+  }
+
+  function getHeatmapData(memberId) {
+    var cells = [], start = new Date();
+    start.setDate(start.getDate() - 55);
+    for (var i = 0; i < 56; i++) {
+      var d = new Date(start); d.setDate(d.getDate() + i);
+      var key = toDateKey(d), count;
+      if (memberId) {
+        count = (state.activityByMember[memberId] && state.activityByMember[memberId][key]) ? 1 : 0;
+      } else {
+        count = state.activityByDate[key] ? Object.keys(state.activityByDate[key]).length : 0;
+      }
+      cells.push({ date: key, count: count });
+    }
+    return cells;
+  }
+
+  function streakLevel(count, isTeam) {
+    if (count === 0) return '';
+    if (!isTeam) return 'l3';
+    if (count <= 1) return 'l1';
+    if (count <= 3) return 'l2';
+    if (count <= 6) return 'l3';
+    return 'l4';
+  }
+
+  function getCoursesDone() {
+    var done = 0, total = state.members.length * 3;
+    state.members.forEach(function(member) {
+      CURRICULUM.forEach(function(course) {
+        var allDone = course.items.every(function(item) { return isItemDone(member.id, item.key); });
+        if (allDone) done++;
+      });
+    });
+    return { done: done, total: total };
+  }
+
+  function getLast7DaysActivity(memberId) {
+    var days = [], d = new Date(), memberDates = state.activityByMember[memberId] || {};
+    for (var i = 6; i >= 0; i--) {
+      var dd = new Date(d); dd.setDate(dd.getDate() - i);
+      days.push(!!memberDates[toDateKey(dd)]);
+    }
+    return days;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return 'Never';
+    var today = toDateKey(new Date());
+    var yesterday = toDateKey(new Date(Date.now() - 86400000));
+    if (dateStr === today) return 'Today';
+    if (dateStr === yesterday) return 'Yesterday';
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  // DOM builder helpers
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function(k) {
+      if (k === 'onclick') node.onclick = attrs[k];
+      else if (k === 'className') node.className = attrs[k];
+      else if (k === 'style') node.setAttribute('style', attrs[k]);
+      else if (k === 'title') node.title = attrs[k];
+      else if (k === 'href') { node.href = attrs[k]; }
+      else if (k === 'target') node.target = attrs[k];
+      else if (k === 'placeholder') node.placeholder = attrs[k];
+      else if (k === 'id') node.id = attrs[k];
+      else if (k === 'readOnly') node.readOnly = attrs[k];
+      else node.setAttribute(k, attrs[k]);
+    });
+    if (typeof children === 'string') node.textContent = children;
+    else if (Array.isArray(children)) children.forEach(function(c) { if (c) node.appendChild(c); });
+    else if (children instanceof Node) node.appendChild(children);
+    return node;
+  }
+
+  // Renderers
+  function renderTabs() {
+    var bar = document.getElementById('tab-bar');
+    bar.textContent = '';
+
+    var dashTab = el('div', { className: 'tab' + (state.currentTab === 'dashboard' ? ' active' : ''), onclick: function() { switchTab('dashboard'); } }, 'Dashboard');
+    bar.appendChild(dashTab);
+
+    state.members.forEach(function(member) {
+      var tab = el('div', { className: 'tab' + (state.currentTab === member.id ? ' active' : ''), onclick: function() { switchTab(member.id); } }, member.name);
+      bar.appendChild(tab);
+    });
+
+    if (state.members.length < 10) {
+      bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
+    }
+  }
+
+  function switchTab(tabId) {
+    state.currentTab = tabId;
+    renderTabs();
+    renderWorkspace();
+    document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function renderHeatmap(cells, label, isTeam) {
+    var section = el('div', { className: 'heatmap-section' }, [
+      el('div', { className: 'heatmap-label' }, label)
+    ]);
+    var grid = el('div', { className: 'heatmap-grid' });
+    cells.forEach(function(cell) {
+      var level = isTeam ? streakLevel(cell.count, true) : (cell.count > 0 ? 'l3' : '');
+      var title = isTeam ? (cell.date + ': ' + cell.count + ' active') : cell.date;
+      grid.appendChild(el('div', { className: 'heatmap-cell ' + level, title: title }));
+    });
+    section.appendChild(grid);
+    return section;
+  }
+
+  function renderWorkspace() {
+    var container = document.getElementById('workspace-content');
+    container.textContent = '';
+    if (state.currentTab === 'dashboard') {
+      renderDashboard(container);
+    } else {
+      renderHub(container, state.currentTab);
+    }
+  }
+
+  function renderDashboard(container) {
+    var teamStreak = getStreak(null);
+    var courses = getCoursesDone();
+    var heatmap = getHeatmapData(null);
+
+    // Stat grid
+    var grid = el('div', { className: 'stat-grid' });
+    [
+      { value: state.members.length + ' / 10', label: 'Members' },
+      { value: teamStreak + 'd', label: 'Team Streak' },
+      { value: courses.done + ' / ' + courses.total, label: 'Courses Done' },
+      { value: 'Late June', label: 'Target' }
+    ].forEach(function(s) {
+      var card = el('div', { className: 'stat-card' }, [
+        el('div', { className: 'stat-value' }, s.value),
+        el('div', { className: 'stat-label' }, s.label)
+      ]);
+      grid.appendChild(card);
+    });
+    container.appendChild(grid);
+
+    container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
+
+    // Member list
+    var list = el('div', { className: 'member-list' });
+    if (state.members.length === 0) {
+      list.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
+    }
+    state.members.forEach(function(member) {
+      var prog = getMemberProgress(member.id);
+      var streak = getStreak(member.id);
+      var lastActive = getLastActive(member.id);
+      var last7 = getLast7DaysActivity(member.id);
+      var pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+
+      var streakDots = el('div', { className: 'member-streak' });
+      last7.forEach(function(active) {
+        streakDots.appendChild(el('div', { className: 'streak-dot' + (active ? ' active' : '') }));
+      });
+      streakDots.appendChild(el('div', { className: 'member-streak-count' }, String(streak)));
+
+      var row = el('div', { className: 'member-row', onclick: function() { switchTab(member.id); } }, [
+        el('div', { className: 'member-avatar', style: 'background:' + safeColor(member.color) }, member.name.charAt(0).toUpperCase()),
+        el('div', { className: 'member-name' }, member.name),
+        el('div', { className: 'member-last-active' }, formatDate(lastActive)),
+        streakDots,
+        el('div', { className: 'member-progress-bar' }, [
+          el('div', { className: 'member-progress-fill', style: 'width:' + pct + '%' })
+        ])
+      ]);
+      list.appendChild(row);
+    });
+    container.appendChild(list);
+  }
+
+  function renderHub(container, memberId) {
+    var member = state.members.find(function(m) { return m.id === memberId; });
+    if (!member) {
+      container.appendChild(el('div', { style: 'padding:32px;text-align:center;color:var(--muted)' }, 'Member not found.'));
+      return;
+    }
+
+    var isOwner = memberId === state.myMemberId;
+    var prog = getMemberProgress(memberId);
+    var streak = getStreak(memberId);
+    var lastActive = getLastActive(memberId);
+    var pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
+    var heatmap = getHeatmapData(memberId);
+    var memberNote = state.notes.find(function(n) { return n.member_id === memberId; });
+
+    // BLUF bar
+    var bluf = el('div', { className: 'bluf-bar' });
+    [
+      { value: streak + 'd', label: 'Streak' },
+      { value: pct + '%', label: 'Complete' },
+      { value: formatDate(lastActive), label: 'Last Check-in' }
+    ].forEach(function(b) {
+      bluf.appendChild(el('div', { className: 'bluf-item' }, [
+        el('div', { className: 'bluf-value' }, b.value),
+        el('div', { className: 'bluf-label' }, b.label)
+      ]));
+    });
+    container.appendChild(bluf);
+
+    container.appendChild(renderHeatmap(heatmap, 'Activity (8 Weeks)', false));
+
+    // Curriculum
+    CURRICULUM.forEach(function(course) {
+      var completedCount = course.items.filter(function(item) { return isItemDone(memberId, item.key); }).length;
+
+      var badgeClass, badgeText;
+      if (completedCount === course.items.length) { badgeClass = 'done'; badgeText = 'Done'; }
+      else if (completedCount > 0) { badgeClass = 'in-progress'; badgeText = 'In Progress'; }
+      else { badgeClass = 'not-started'; badgeText = 'Not Started'; }
+
+      var block = el('div', { className: 'course-block' });
+      var header = el('div', { className: 'course-header' }, [
+        el('div', { className: 'course-title' }, [
+          el('a', { href: course.url, target: '_blank' }, course.course)
+        ]),
+        el('div', { className: 'course-badge ' + badgeClass }, badgeText)
+      ]);
+      block.appendChild(header);
+
+      course.items.forEach(function(item) {
+        var isDone = isItemDone(memberId, item.key);
+        var checkNode = el('div', { className: 'check' + (isDone ? ' done' : '') + (isOwner ? '' : ' readonly') });
+        if (isDone) checkNode.textContent = '\u2713';
+        if (isOwner) checkNode.onclick = function() { toggleItem(item.key); };
+
+        var labelLink = el('a', { href: course.url, target: '_blank' }, item.label);
+        var labelDiv = el('div', { className: 'course-item-label' }, [labelLink]);
+
+        block.appendChild(el('div', { className: 'course-item' }, [checkNode, labelDiv]));
+      });
+
+      container.appendChild(block);
+    });
+
+    // Exam prep
+    var examBlock = el('div', { className: 'exam-prep' });
+    examBlock.appendChild(el('div', { className: 'exam-prep-title' }, 'Exam Prep Resources'));
+    EXAM_RESOURCES.forEach(function(res) {
+      var link = el('div', { className: 'exam-prep-link' }, [
+        el('a', { href: res.url, target: '_blank' }, res.label)
+      ]);
+      examBlock.appendChild(link);
+    });
+    container.appendChild(examBlock);
+
+    // Notes
+    var notesSection = el('div', { className: 'notes-section' });
+    notesSection.appendChild(el('div', { className: 'notes-header' }, [
+      el('div', { className: 'notes-title' }, 'Notes'),
+      el('div', { className: 'notes-badge' }, 'Visible to cohort')
+    ]));
+
+    if (isOwner) {
+      var textarea = el('textarea', { className: 'notes-box', id: 'notes-input', placeholder: 'Your study notes, questions, thoughts...' });
+      textarea.value = (memberNote && memberNote.content) ? memberNote.content : '';
+      notesSection.appendChild(textarea);
+    } else {
+      var noteContent = (memberNote && memberNote.content) ? memberNote.content : '';
+      if (noteContent) {
+        var readonlyDiv = el('div', { className: 'notes-readonly' }, noteContent);
+        notesSection.appendChild(readonlyDiv);
+      } else {
+        notesSection.appendChild(el('div', { className: 'notes-readonly notes-empty' }, 'No notes yet.'));
+      }
+    }
+    container.appendChild(notesSection);
+  }
+
+  function updateSlotGrid() {
+    var grid = document.getElementById('slots-grid');
+    var countEl = document.getElementById('slots-count');
+    var badgeEl = document.getElementById('badge');
+    if (!grid) return;
+
+    grid.textContent = '';
+    for (var i = 0; i < 10; i++) {
+      var slot;
+      if (i < state.members.length) {
+        var member = state.members[i];
+        slot = el('div', { className: 'slot filled', style: 'background:' + safeColor(member.color), title: member.name }, member.name.charAt(0).toUpperCase());
+      } else {
+        slot = el('div', { className: 'slot open' }, String(i + 1));
+      }
+      grid.appendChild(slot);
+    }
+
+    var remaining = 10 - state.members.length;
+    countEl.textContent = '';
+    badgeEl.textContent = '';
+
+    if (remaining > 0) {
+      var strong = el('strong', null, remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining.');
+      countEl.appendChild(strong);
+      countEl.appendChild(document.createTextNode(' Once we\'re full, the window closes.'));
+
+      var dot = el('span', { className: 'dot' });
+      badgeEl.appendChild(dot);
+      badgeEl.appendChild(document.createTextNode(' ' + remaining + ' Spot' + (remaining === 1 ? '' : 's') + ' Left'));
+    } else {
+      countEl.appendChild(el('strong', null, 'Cohort is full.'));
+      var dot2 = el('span', { className: 'dot' });
+      badgeEl.appendChild(dot2);
+      badgeEl.appendChild(document.createTextNode(' Cohort Full'));
+    }
+  }
+
+  // Actions
+  function showJoinModal() {
+    if (state.myMemberId) { alert('You already have a spot in the cohort.'); return; }
+    if (state.members.length >= 10) { alert('The cohort is full.'); return; }
+    var name = prompt('What\'s your first name?');
+    if (name && name.trim()) joinCohort(name.trim());
+  }
+
+  function joinCohort(name) {
+    var color = AVATAR_COLORS[state.members.length] || '#999999';
+    sb.from('members').insert({ name: name, color: color }).select().single()
+      .then(function(result) {
+        if (result.error) {
+          if (result.error.code === '23505') alert('That name is already taken. Try a different one.');
+          else alert('Something went wrong: ' + result.error.message);
+          return;
+        }
+        localStorage.setItem('cohort_member_id', result.data.id);
+        state.myMemberId = result.data.id;
+        return sb.from('notes').insert({ member_id: result.data.id, content: '' })
+          .then(function() { return fetchAll(); })
+          .then(function() { updateSlotGrid(); switchTab(result.data.id); });
+      });
+  }
+
+  function toggleItem(itemKey) {
+    if (!state.myMemberId) return;
+    var existing = state.progress.find(function(p) { return p.member_id === state.myMemberId && p.item_key === itemKey; });
+    var newCompleted = existing ? !existing.completed : true;
+    var today = toDateKey(new Date());
+
+    Promise.all([
+      sb.from('progress').upsert({ member_id: state.myMemberId, item_key: itemKey, completed: newCompleted, completed_at: newCompleted ? new Date().toISOString() : null }, { onConflict: 'member_id,item_key' }),
+      sb.from('activity').upsert({ member_id: state.myMemberId, activity_date: today, activity_type: 'checkbox' }, { onConflict: 'member_id,activity_date,activity_type' })
+    ]).then(function() { return fetchAll(); })
+      .then(function() { renderWorkspace(); });
+  }
+
+  var noteTimer = null;
+
+  function debounceSaveNote() {
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(saveNote, 2000);
+  }
+
+  function saveNote() {
+    if (!state.myMemberId) return;
+    var textarea = document.getElementById('notes-input');
+    if (!textarea) return;
+    var today = toDateKey(new Date());
+
+    Promise.all([
+      sb.from('notes').upsert({ member_id: state.myMemberId, content: textarea.value, updated_at: new Date().toISOString() }, { onConflict: 'member_id' }),
+      sb.from('activity').upsert({ member_id: state.myMemberId, activity_date: today, activity_type: 'note' }, { onConflict: 'member_id,activity_date,activity_type' })
+    ]).then(function() { return fetchAll(); });
+  }
+
+  document.addEventListener('input', function(e) {
+    if (e.target.id === 'notes-input') debounceSaveNote();
+  });
+
+  document.addEventListener('focusout', function(e) {
+    if (e.target.id === 'notes-input') { clearTimeout(noteTimer); saveNote(); }
+  });
+
+  // Real-time
+  var realtimeDebounce = null;
+
+  function subscribeRealtime() {
+    sb.channel('cohort-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'members' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activity' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'progress' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, handleRealtimeChange)
+      .subscribe();
+  }
+
+  function handleRealtimeChange() {
+    clearTimeout(realtimeDebounce);
+    realtimeDebounce = setTimeout(function() {
+      fetchAll().then(function() {
+        var notesEl = document.getElementById('notes-input');
+        var hadFocus = notesEl && document.activeElement === notesEl;
+        var liveValue = hadFocus ? notesEl.value : null;
+        var cursorPos = hadFocus ? notesEl.selectionStart : null;
+
+        updateSlotGrid();
+        renderTabs();
+        renderWorkspace();
+
+        if (hadFocus) {
+          var restored = document.getElementById('notes-input');
+          if (restored) { restored.value = liveValue; restored.focus(); restored.setSelectionRange(cursorPos, cursorPos); }
+        }
+      });
+    }, 300);
+  }
+
+  // Init
+  fetchAll()
+    .then(function() { return verifyIdentity(); })
+    .then(function() {
+      updateSlotGrid();
+      if (state.myMemberId) state.currentTab = state.myMemberId;
+      renderTabs();
+      renderWorkspace();
+      subscribeRealtime();
+      if (state.myMemberId) {
+        setTimeout(function() {
+          document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
+      }
+    });
+})();
+</script>
 
 </body>
 </html>
