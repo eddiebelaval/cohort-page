@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-04-01-cohort-workspace-design.md`
 
+**Git:** This project does not use the staged commit convention. Commits use bare `feat:` / `fix:` prefixes. All work on `feature/finish-build` branch, PR to main for merge.
+
 **XSS Note:** This app has no user-generated HTML. All dynamic content (member names, notes) is inserted via `textContent` or template literals where the only dynamic values are data we control (names, dates, numbers, booleans). The Supabase anon key is public by design. The app is used by 10 trusted people with no public write surface beyond what RLS allows.
 
 ---
@@ -216,9 +218,9 @@ All data values from the spec (item keys, URLs, colors) should be defined as con
 - `getMemberStreak(memberId)` -- counts consecutive days backwards from today where member has activity
 - `getTeamStreak()` -- counts consecutive days backwards from today where any member has activity
 - `getLastActive(memberId)` -- returns most recent activity_date or null
-- `getHeatmapData(memberId)` -- returns 56 cells (8 weeks ending today), each `{ date, count }`. If memberId is null, count = distinct members active that day (team view). If memberId provided, count = 0 or 1 (personal view).
-- `streakLevel(count, isTeam)` -- returns CSS class string: '' for 0, 'l3' for personal active, 'l1'-'l4' for team based on member count thresholds
-- `getCoursesDone()` -- counts courses where all 4 items are completed, across all members
+- `getHeatmapData(memberId)` -- returns 56 cells (8 weeks ending today), each `{ date, count }`. If memberId is null, count = distinct members active that day (team view). If memberId provided, count = 0 or 1 (personal view). Heatmap renders as a flex-wrap grid of 14px cells with 3px gap. No axis labels or week markers needed -- keep it simple like the mockup. The 7-column layout happens naturally via flex-wrap at the right container width.
+- `streakLevel(count, isTeam)` -- returns CSS class string. If count is 0: return ''. If personal (isTeam=false): return 'l3' (binary active/not). If team: 1 member='l1', 2-3='l2', 4-6='l3', 7+='l4'.
+- `getCoursesDone()` -- counts courses where all 4 items are completed, summed across all members. Returns `{ done, total }` where total = `state.members.length * 3`. Dashboard renders as "done / total".
 - `formatDate(dateStr)` -- returns 'today', 'yesterday', or 'Mon DD' format
 
 - [ ] **Step 4: Verify no errors**
@@ -446,6 +448,7 @@ Add to the existing `@media (max-width: 520px)` block:
 .tab { padding: 6px 12px; font-size: 12px; }
 .member-row { flex-wrap: wrap; }
 .member-streak { order: 3; width: 100%; margin-top: 4px; }
+.streak-grid { overflow-x: auto; }
 ```
 
 - [ ] **Step 2: Replace Supabase credentials**
@@ -475,15 +478,16 @@ Test checklist:
 - [ ] Returning member: auto-scrolls to workspace on reload
 - [ ] localStorage cleared: visitor sees read-only view, "+" tab works
 
-- [ ] **Step 4: Commit and push**
+- [ ] **Step 4: Commit and create PR**
 
 ```bash
 git add index.html
 git commit -m "feat: complete cohort workspace with real-time collaboration"
-git push origin main
+git push origin feature/finish-build
+gh pr create --title "feat: cohort workspace with real-time collaboration" --body "Transforms static landing page into collaborative learning workspace. Supabase-backed with real-time updates, per-member hubs, streak tracking, curriculum checklists, and shared notes."
 ```
 
-Vercel auto-deploys. Verify at https://cohort-page.vercel.app.
+Do NOT merge -- Eddie reviews and merges PRs. Vercel will preview-deploy the PR.
 
 ---
 
