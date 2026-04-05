@@ -1243,6 +1243,22 @@
     ]);
     container.appendChild(posLine);
 
+    // Identity recovery: let someone claim a hub if they lost their localStorage
+    if (!state.myMemberId) {
+      var claimBtn = el('button', {
+        style: 'display:block;margin:0 auto 20px;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--accent);background:none;border:1px solid var(--accent);padding:6px 16px;border-radius:6px;cursor:pointer;',
+        onclick: function() {
+          if (confirm('Claim this hub as ' + member.name + '? This lets you check off items and edit notes.')) {
+            localStorage.setItem('cohort_member_id', memberId);
+            state.myMemberId = memberId;
+            renderTabs();
+            renderWorkspace();
+          }
+        }
+      }, 'This is me');
+      container.appendChild(claimBtn);
+    }
+
     // Next steps banner (only for owner, only when no progress)
     if (isOwner && prog.done === 0) {
       var steps = el('div', { className: 'next-steps' }, [
