@@ -328,8 +328,56 @@
   .tab-browse select:hover { color: var(--ink); }
   .tab-browse.active select { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
 
+  /* Lane Chart: swimming lanes progress visualization */
+  .lane-chart { margin-bottom: 36px; }
+  .lane-header {
+    display: flex; position: relative; padding-left: 100px; margin-bottom: 8px;
+  }
+  .lane-header-track { flex: 1; position: relative; height: 16px; }
+  .lane-milestone-label {
+    position: absolute; top: 0;
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); transform: translateX(-50%);
+  }
+  .lane-row {
+    display: flex; align-items: center; height: 28px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lane-row:hover { background: var(--card-bg); }
+  .lane-identity {
+    width: 100px; display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .lane-avatar {
+    width: 20px; height: 20px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .lane-name {
+    font-size: 12px; font-weight: 500; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lane-track {
+    flex: 1; position: relative; height: 12px;
+    background: var(--card-bg); border-radius: 3px; overflow: visible;
+  }
+  .lane-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.6s ease; min-width: 2px;
+  }
+  .lane-milestone-line {
+    position: absolute; top: -8px; bottom: -8px; width: 1px;
+    border-left: 1px dashed var(--border); z-index: 1;
+  }
+
+  @media (max-width: 520px) {
+    .lane-identity { width: 36px; }
+    .lane-name { display: none; }
+    .lane-header { padding-left: 36px; }
+  }
+
   /* Stat Grid: open layout, no card backgrounds */
-  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 36px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 36px; }
   .stat-card { padding: 20px 0; text-align: center; border-right: 1px solid var(--border); }
   .stat-card:last-child { border-right: none; }
   .stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; letter-spacing: -1.5px; margin-bottom: 4px; color: var(--ink); }
@@ -720,6 +768,74 @@
     return { done: done, total: ALL_ITEM_KEYS.length };
   }
 
+  function getProgressPercent(memberId) {
+    var prog = getMemberProgress(memberId);
+    return prog.total > 0 ? (prog.done / prog.total) * 100 : 0;
+  }
+
+  function getMilestoneLabel(memberId) {
+    var c1 = CURRICULUM[0].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var c2 = CURRICULUM[1].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var c3 = CURRICULUM[2].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var prog = getMemberProgress(memberId);
+    if (c1 && c2 && c3) return 'All Courses Done';
+    if (c1 && c2) return 'Course 3';
+    if (c1) return 'Course 2';
+    if (prog.done > 0) return 'Course 1';
+    return 'Not Started';
+  }
+
+  function renderLaneChart(container) {
+    var chart = el('div', { className: 'lane-chart' });
+
+    // Header with milestone labels
+    var header = el('div', { className: 'lane-header' });
+    var headerTrack = el('div', { className: 'lane-header-track' });
+    [
+      { label: 'C1', pct: 33 },
+      { label: 'C2', pct: 66 },
+      { label: 'Done', pct: 100 }
+    ].forEach(function(m) {
+      headerTrack.appendChild(el('div', { className: 'lane-milestone-label', style: 'left:' + m.pct + '%' }, m.label));
+    });
+    header.appendChild(headerTrack);
+    chart.appendChild(header);
+
+    // Sort members by progress (most complete first)
+    var sorted = state.members.slice().sort(function(a, b) {
+      return getProgressPercent(b.id) - getProgressPercent(a.id);
+    });
+
+    sorted.forEach(function(member) {
+      var pct = getProgressPercent(member.id);
+      var prog = getMemberProgress(member.id);
+      var row = el('div', {
+        className: 'lane-row',
+        title: member.name + ' -- ' + prog.done + '/' + prog.total + ' items',
+        onclick: function() { switchTab(member.id); }
+      });
+
+      // Identity: avatar + name
+      var identity = el('div', { className: 'lane-identity' }, [
+        el('div', { className: 'lane-avatar', style: 'background:' + safeColor(member.color) }, member.name.charAt(0).toUpperCase()),
+        el('div', { className: 'lane-name' }, member.name)
+      ]);
+      row.appendChild(identity);
+
+      // Track with fill and milestone lines
+      var track = el('div', { className: 'lane-track' });
+      track.appendChild(el('div', { className: 'lane-fill', style: 'width:' + Math.max(pct, 1.5) + '%;background:' + safeColor(member.color) }));
+      [33, 66, 100].forEach(function(m) {
+        track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
+      });
+      row.appendChild(track);
+
+      chart.appendChild(row);
+    });
+
+    container.appendChild(chart);
+  }
+
   function getStreak(memberId) {
     var dates = memberId ? (state.activityByMember[memberId] || {}) : state.activityByDate;
     var streak = 0, d = new Date();
@@ -876,15 +992,13 @@
 
   function renderDashboard(container) {
     var teamStreak = getStreak(null);
-    var courses = getCoursesDone();
     var heatmap = getHeatmapData(null);
 
-    // Stat grid
+    // Compact stat bar (3 stats)
     var grid = el('div', { className: 'stat-grid' });
     [
       { value: state.members.length + ' Members', label: 'Cohort' },
       { value: teamStreak + 'd', label: 'Team Streak' },
-      { value: courses.done + ' / ' + courses.total, label: 'Courses Done' },
       { value: 'Late June', label: 'Target' }
     ].forEach(function(s) {
       var card = el('div', { className: 'stat-card' }, [
@@ -895,38 +1009,15 @@
     });
     container.appendChild(grid);
 
-    container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
-
-    // Member list
-    var list = el('div', { className: 'member-list' });
-    if (state.members.length === 0) {
-      list.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
+    // Lane chart (the hero)
+    if (state.members.length > 0) {
+      renderLaneChart(container);
+    } else {
+      container.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
     }
-    state.members.forEach(function(member) {
-      var prog = getMemberProgress(member.id);
-      var streak = getStreak(member.id);
-      var lastActive = getLastActive(member.id);
-      var last7 = getLast7DaysActivity(member.id);
-      var pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
 
-      var streakDots = el('div', { className: 'member-streak' });
-      last7.forEach(function(active) {
-        streakDots.appendChild(el('div', { className: 'streak-dot' + (active ? ' active' : '') }));
-      });
-      streakDots.appendChild(el('div', { className: 'member-streak-count' }, String(streak)));
-
-      var row = el('div', { className: 'member-row', onclick: function() { switchTab(member.id); } }, [
-        el('div', { className: 'member-avatar', style: 'background:' + safeColor(member.color) }, member.name.charAt(0).toUpperCase()),
-        el('div', { className: 'member-name' }, member.name),
-        el('div', { className: 'member-last-active' }, formatDate(lastActive)),
-        streakDots,
-        el('div', { className: 'member-progress-bar' }, [
-          el('div', { className: 'member-progress-fill', style: 'width:' + pct + '%' })
-        ])
-      ]);
-      list.appendChild(row);
-    });
-    container.appendChild(list);
+    // Team heatmap
+    container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
   }
 
   function renderHub(container, memberId) {
