@@ -1342,6 +1342,7 @@
     var name = prompt('What\'s your first name?');
     if (name && name.trim()) joinCohort(name.trim());
   }
+  window.showJoinModal = showJoinModal;
 
   function joinCohort(name) {
     var color = AVATAR_COLORS[state.members.length] || '#999999';
