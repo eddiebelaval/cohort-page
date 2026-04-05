@@ -318,6 +318,16 @@
   .tab.add-tab { color: var(--accent); font-size: 16px; font-weight: 600; padding: 8px 16px 12px; }
   .tab.add-tab:hover { color: var(--accent-glow); }
 
+  .tab-browse select {
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--muted); background: transparent; border: none;
+    padding: 10px 20px 12px; cursor: pointer; outline: none;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    letter-spacing: 0.2px; -webkit-appearance: none; appearance: none;
+  }
+  .tab-browse select:hover { color: var(--ink); }
+  .tab-browse.active select { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+
   /* Stat Grid: open layout, no card backgrounds */
   .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 36px; }
   .stat-card { padding: 20px 0; text-align: center; border-right: 1px solid var(--border); }
@@ -805,14 +815,31 @@
     var bar = document.getElementById('tab-bar');
     bar.textContent = '';
 
-    var dashTab = el('div', { className: 'tab' + (state.currentTab === 'dashboard' ? ' active' : ''), onclick: function() { switchTab('dashboard'); } }, 'Dashboard');
-    bar.appendChild(dashTab);
+    // Dashboard tab
+    bar.appendChild(el('div', { className: 'tab' + (state.currentTab === 'dashboard' ? ' active' : ''), onclick: function() { switchTab('dashboard'); } }, 'Dashboard'));
 
+    // My Hub tab (only if user has joined)
+    if (state.myMemberId) {
+      var myMember = state.members.find(function(m) { return m.id === state.myMemberId; });
+      var isMyHub = state.currentTab === state.myMemberId;
+      bar.appendChild(el('div', { className: 'tab' + (isMyHub ? ' active' : ''), onclick: function() { switchTab(state.myMemberId); } }, 'My Hub'));
+    }
+
+    // Browse dropdown
+    var isBrowsing = state.currentTab !== 'dashboard' && state.currentTab !== state.myMemberId;
+    var browseWrapper = el('div', { className: 'tab-browse' + (isBrowsing ? ' active' : '') });
+    var select = document.createElement('select');
+    select.appendChild(el('option', { value: '' }, 'Browse Members'));
     state.members.forEach(function(member) {
-      var tab = el('div', { className: 'tab' + (state.currentTab === member.id ? ' active' : ''), onclick: function() { switchTab(member.id); } }, member.name);
-      bar.appendChild(tab);
+      var opt = el('option', { value: member.id }, member.name);
+      if (state.currentTab === member.id && isBrowsing) opt.selected = true;
+      select.appendChild(opt);
     });
+    select.onchange = function() { if (this.value) switchTab(this.value); };
+    browseWrapper.appendChild(select);
+    bar.appendChild(browseWrapper);
 
+    // Join button
     bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
   }
 
