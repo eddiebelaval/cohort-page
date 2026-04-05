@@ -370,6 +370,18 @@
     border-left: 1px dashed var(--border); z-index: 1;
   }
 
+  .lane-avatar-wrap { position: relative; }
+  .lane-active-dot {
+    position: absolute; bottom: -1px; right: -1px;
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 1.5px solid white;
+  }
+  .lane-active-dot.today { background: var(--green); }
+  .lane-active-dot.week { background: #facc15; }
+
+  @keyframes lanePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .lane-fill.milestone-hit { animation: lanePulse 0.8s ease 2; }
+
   @media (max-width: 520px) {
     .lane-identity { width: 36px; }
     .lane-name { display: none; }
@@ -414,7 +426,13 @@
   .member-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
 
   /* BLUF Bar: open, no cards */
-  .bluf-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-bottom: 36px; }
+  .hub-position {
+    text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
+  }
+  .hub-position .hub-milestone { color: var(--accent); }
+
+  .bluf-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-bottom: 36px; }
   .bluf-item { padding: 16px 0; text-align: center; border-right: 1px solid var(--border); }
   .bluf-item:last-child { border-right: none; }
   .bluf-value { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.5px; margin-bottom: 4px; }
@@ -785,6 +803,17 @@
     return 'Not Started';
   }
 
+  function getActivityStatus(memberId) {
+    var today = toDateKey(new Date());
+    var weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    var memberActivity = state.activityByMember[memberId] || {};
+    if (memberActivity[today]) return 'today';
+    for (var d = new Date(); d >= weekAgo; d.setDate(d.getDate() - 1)) {
+      if (memberActivity[toDateKey(d)]) return 'week';
+    }
+    return 'inactive';
+  }
+
   function renderLaneChart(container) {
     var chart = el('div', { className: 'lane-chart' });
 
@@ -815,9 +844,16 @@
         onclick: function() { switchTab(member.id); }
       });
 
-      // Identity: avatar + name
+      // Identity: avatar with active dot + name
+      var actStatus = getActivityStatus(member.id);
+      var avatarWrap = el('div', { className: 'lane-avatar-wrap' }, [
+        el('div', { className: 'lane-avatar', style: 'background:' + safeColor(member.color) }, member.name.charAt(0).toUpperCase())
+      ]);
+      if (actStatus !== 'inactive') {
+        avatarWrap.appendChild(el('div', { className: 'lane-active-dot ' + actStatus }));
+      }
       var identity = el('div', { className: 'lane-identity' }, [
-        el('div', { className: 'lane-avatar', style: 'background:' + safeColor(member.color) }, member.name.charAt(0).toUpperCase()),
+        avatarWrap,
         el('div', { className: 'lane-name' }, member.name)
       ]);
       row.appendChild(identity);
@@ -1034,12 +1070,26 @@
     var pct = prog.total > 0 ? Math.round((prog.done / prog.total) * 100) : 0;
     var heatmap = getHeatmapData(memberId);
     var memberNote = state.notes.find(function(n) { return n.member_id === memberId; });
+    var milestone = getMilestoneLabel(memberId);
+
+    // Journey position breadcrumb
+    var posLine = el('div', { className: 'hub-position' }, [
+      el('span', { className: 'hub-milestone' }, milestone),
+      document.createTextNode(' -- ' + prog.done + ' of ' + prog.total + ' items complete')
+    ]);
+    container.appendChild(posLine);
+
+    // Cohort average
+    var cohortTotal = 0;
+    state.members.forEach(function(m) { cohortTotal += getProgressPercent(m.id); });
+    var cohortAvg = state.members.length > 0 ? Math.round(cohortTotal / state.members.length) : 0;
 
     // BLUF bar
     var bluf = el('div', { className: 'bluf-bar' });
     [
       { value: streak + 'd', label: 'Streak' },
       { value: pct + '%', label: 'Complete' },
+      { value: cohortAvg + '%', label: 'Cohort Avg' },
       { value: formatDate(lastActive), label: 'Last Check-in' }
     ].forEach(function(b) {
       bluf.appendChild(el('div', { className: 'bluf-item' }, [
