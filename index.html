@@ -426,11 +426,11 @@
 
 <div class="container">
 
-  <div class="badge" id="badge"><span class="dot"></span> 10 Spots Left</div>
+  <div class="badge" id="badge"><span class="dot"></span> Spots Available</div>
 
   <h1>Get <span class="highlight">Claude Certified</span> with me.</h1>
 
-  <p class="subtitle">I'm building a cohort of 10 people to study for and take the Claude Certified Architect exam together. The coursework is free. The certification is issued by Anthropic. I'm looking for ten people who want in.</p>
+  <p class="subtitle">I'm building a cohort to study for and take the Claude Certified Architect exam together. The coursework is free. The certification is issued by Anthropic. If you want in, claim your spot.</p>
 
   <div class="slots-section">
     <div class="section-label">Cohort Seats</div>
@@ -541,7 +541,7 @@
       </div>
       <div class="what-card">
         <strong>Built-in Crew</strong>
-        <p>You're not doing this alone. Ten people, one group chat, mutual accountability.</p>
+        <p>You're not doing this alone. One crew, one group chat, mutual accountability.</p>
       </div>
     </div>
   </div>
@@ -608,7 +608,7 @@
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsemFjdHR6ZGhtenlwZ2pjY3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODUxNDUsImV4cCI6MjA3NjA2MTE0NX0.3CctSlxwFg7ywUdJxSYyPrYtsc2SMeFEs08wru7kueo';
   var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  var AVATAR_COLORS = ['#d4622b','#7c3aed','#0891b2','#16a34a','#dc2626','#ca8a04','#6366f1','#ec4899','#14b8a6','#f97316'];
+  var AVATAR_COLORS = ['#d4622b','#7c3aed','#0891b2','#16a34a','#dc2626','#ca8a04','#6366f1','#ec4899','#14b8a6','#f97316','#8b5cf6','#059669','#e11d48','#0284c7','#d97706','#4f46e5','#db2777','#0d9488','#ea580c','#7c3aed'];
 
   var CURRICULUM = [
     { course: 'Claude 101', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
@@ -807,9 +807,7 @@
       bar.appendChild(tab);
     });
 
-    if (state.members.length < 10) {
-      bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
-    }
+    bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
   }
 
   function switchTab(tabId) {
@@ -851,7 +849,7 @@
     // Stat grid
     var grid = el('div', { className: 'stat-grid' });
     [
-      { value: state.members.length + ' / 10', label: 'Members' },
+      { value: state.members.length + ' Members', label: 'Cohort' },
       { value: teamStreak + 'd', label: 'Team Streak' },
       { value: courses.done + ' / ' + courses.total, label: 'Courses Done' },
       { value: 'Late June', label: 'Target' }
@@ -1003,41 +1001,28 @@
     if (!grid) return;
 
     grid.textContent = '';
-    for (var i = 0; i < 10; i++) {
-      var slot;
-      if (i < state.members.length) {
-        var member = state.members[i];
-        slot = el('div', { className: 'slot filled', style: 'background:' + safeColor(member.color), title: member.name }, member.name.charAt(0).toUpperCase());
-      } else {
-        slot = el('div', { className: 'slot open' }, String(i + 1));
-      }
+    state.members.forEach(function(member) {
+      var slot = el('div', { className: 'slot filled', style: 'background:' + safeColor(member.color), title: member.name }, member.name.charAt(0).toUpperCase());
       grid.appendChild(slot);
-    }
+    });
+    // Show one open slot as visual invite
+    grid.appendChild(el('div', { className: 'slot open' }, '+'));
 
-    var remaining = 10 - state.members.length;
     countEl.textContent = '';
     badgeEl.textContent = '';
 
-    if (remaining > 0) {
-      var strong = el('strong', null, remaining + ' spot' + (remaining === 1 ? '' : 's') + ' remaining.');
-      countEl.appendChild(strong);
-      countEl.appendChild(document.createTextNode(' Once we\'re full, the window closes.'));
+    var strong = el('strong', null, state.members.length + ' in the cohort.');
+    countEl.appendChild(strong);
+    countEl.appendChild(document.createTextNode(' Claim your spot and join us.'));
 
-      var dot = el('span', { className: 'dot' });
-      badgeEl.appendChild(dot);
-      badgeEl.appendChild(document.createTextNode(' ' + remaining + ' Spot' + (remaining === 1 ? '' : 's') + ' Left'));
-    } else {
-      countEl.appendChild(el('strong', null, 'Cohort is full.'));
-      var dot2 = el('span', { className: 'dot' });
-      badgeEl.appendChild(dot2);
-      badgeEl.appendChild(document.createTextNode(' Cohort Full'));
-    }
+    var dot = el('span', { className: 'dot' });
+    badgeEl.appendChild(dot);
+    badgeEl.appendChild(document.createTextNode(' Spots Available'));
   }
 
   // Actions
   function showJoinModal() {
     if (state.myMemberId) { alert('You already have a spot in the cohort.'); return; }
-    if (state.members.length >= 10) { alert('The cohort is full.'); return; }
     var name = prompt('What\'s your first name?');
     if (name && name.trim()) joinCohort(name.trim());
   }
