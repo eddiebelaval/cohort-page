@@ -379,6 +379,11 @@
   .lane-active-dot.today { background: var(--green); }
   .lane-active-dot.week { background: #facc15; }
 
+  .lane-score {
+    width: 32px; text-align: right; flex-shrink: 0;
+    font-size: 11px; font-weight: 700; margin-left: 8px;
+  }
+
   @keyframes lanePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   .lane-fill.milestone-hit { animation: lanePulse 0.8s ease 2; }
 
@@ -386,6 +391,46 @@
     .lane-identity { width: 36px; }
     .lane-name { display: none; }
     .lane-header { padding-left: 36px; }
+  }
+
+  /* Bookmarks section */
+  .bookmarks-section { margin-bottom: 36px; }
+  .bookmark-form {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .bookmark-input {
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    padding: 8px 12px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--paper); color: var(--ink);
+    outline: none; transition: border-color 0.15s;
+  }
+  .bookmark-input:focus { border-color: var(--ink); }
+  .bookmark-input.url { flex: 2; }
+  .bookmark-input.title { flex: 1; }
+  .bookmark-submit {
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    background: var(--ink); color: var(--paper);
+    border: none; padding: 8px 16px; border-radius: 6px;
+    cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .bookmark-submit:hover { background: var(--accent); }
+  .bookmark-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .bookmark-row:last-child { border-bottom: none; }
+  .bookmark-title { font-weight: 500; font-size: 14px; flex: 1; min-width: 0; }
+  .bookmark-title a { color: var(--ink); text-decoration: none; }
+  .bookmark-title a:hover { color: var(--accent); }
+  .bookmark-meta {
+    font-size: 11px; color: var(--muted); white-space: nowrap;
+    display: flex; gap: 8px; align-items: center;
+  }
+
+  @media (max-width: 520px) {
+    .bookmark-form { flex-wrap: wrap; }
+    .bookmark-input.url, .bookmark-input.title { flex: 1 1 100%; }
   }
 
   /* Stat Grid: open layout, no card backgrounds */
@@ -724,7 +769,7 @@
 
   // State
   var state = {
-    members: [], activity: [], progress: [], notes: [],
+    members: [], activity: [], progress: [], notes: [], bookmarks: [],
     currentTab: 'dashboard',
     myMemberId: localStorage.getItem('cohort_member_id')
   };
@@ -737,12 +782,14 @@
       sb.from('members').select('*').order('created_at'),
       sb.from('activity').select('member_id,activity_date,activity_type').gte('activity_date', cutoffStr),
       sb.from('progress').select('member_id,item_key,completed'),
-      sb.from('notes').select('*')
+      sb.from('notes').select('*'),
+      sb.from('bookmarks').select('*').order('created_at', { ascending: false })
     ]).then(function(results) {
       state.members = results[0].data || [];
       state.activity = results[1].data || [];
       state.progress = results[2].data || [];
       state.notes = results[3].data || [];
+      state.bookmarks = results[4].data || [];
       buildIndexes();
     });
   }
@@ -814,6 +861,41 @@
     return 'inactive';
   }
 
+  function getReadinessScore(memberId) {
+    var prog = getMemberProgress(memberId);
+    var streak = getStreak(memberId);
+    var lastActive = getLastActive(memberId);
+    var memberNote = state.notes.find(function(n) { return n.member_id === memberId; });
+    var noteLen = (memberNote && memberNote.content) ? memberNote.content.length : 0;
+
+    var completionScore = (prog.done / prog.total) * 50;
+    var streakScore = Math.min(streak, 10) / 10 * 20;
+
+    var recencyScore = 0;
+    if (lastActive) {
+      var daysSince = Math.floor((Date.now() - new Date(lastActive + 'T00:00:00').getTime()) / 86400000);
+      if (daysSince <= 1) recencyScore = 15;
+      else if (daysSince <= 3) recencyScore = 12;
+      else if (daysSince <= 7) recencyScore = 8;
+      else if (daysSince <= 14) recencyScore = 4;
+    }
+
+    var notesScore = Math.min(noteLen, 300) / 300 * 15;
+    return Math.round(completionScore + streakScore + recencyScore + notesScore);
+  }
+
+  function getReadinessColor(score) {
+    if (score >= 80) return 'var(--green)';
+    if (score >= 50) return 'var(--accent)';
+    return 'var(--muted)';
+  }
+
+  function getReadinessLabel(score) {
+    if (score >= 80) return 'Ready';
+    if (score >= 50) return 'Getting There';
+    return 'Building Up';
+  }
+
   function renderLaneChart(container) {
     var chart = el('div', { className: 'lane-chart' });
 
@@ -865,6 +947,10 @@
         track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
       });
       row.appendChild(track);
+
+      // Readiness score
+      var score = getReadinessScore(member.id);
+      row.appendChild(el('div', { className: 'lane-score', style: 'color:' + getReadinessColor(score) }, String(score)));
 
       chart.appendChild(row);
     });
@@ -1052,8 +1138,63 @@
       container.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
     }
 
+    // Shared resources
+    renderBookmarksSection(container);
+
     // Team heatmap
     container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
+  }
+
+  function renderBookmarksSection(container) {
+    var section = el('div', { className: 'bookmarks-section' });
+    section.appendChild(el('div', { className: 'section-label' }, 'Shared Resources'));
+
+    // Add form (only for members)
+    if (state.myMemberId) {
+      var urlInput = el('input', { className: 'bookmark-input url', placeholder: 'https://...', type: 'url' });
+      var titleInput = el('input', { className: 'bookmark-input title', placeholder: 'Title' });
+      var submitBtn = el('button', { className: 'bookmark-submit', onclick: function() {
+        var url = urlInput.value.trim();
+        var title = titleInput.value.trim();
+        if (!url || !title) return;
+        addBookmark(url, title);
+        urlInput.value = '';
+        titleInput.value = '';
+      } }, 'Share');
+      section.appendChild(el('div', { className: 'bookmark-form' }, [urlInput, titleInput, submitBtn]));
+    }
+
+    // Bookmark list
+    if (state.bookmarks.length === 0) {
+      section.appendChild(el('div', { style: 'color:var(--muted);font-size:13px;padding:12px 0;' }, 'No resources shared yet. Be the first.'));
+    } else {
+      state.bookmarks.forEach(function(bm) {
+        var sharer = state.members.find(function(m) { return m.id === bm.member_id; });
+        var sharerName = sharer ? sharer.name : 'Unknown';
+        var date = new Date(bm.created_at);
+        var dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+        section.appendChild(el('div', { className: 'bookmark-row' }, [
+          el('div', { className: 'bookmark-title' }, [
+            el('a', { href: bm.url, target: '_blank' }, bm.title)
+          ]),
+          el('div', { className: 'bookmark-meta' }, [
+            el('span', null, sharerName),
+            el('span', null, dateStr)
+          ])
+        ]));
+      });
+    }
+
+    container.appendChild(section);
+  }
+
+  function addBookmark(url, title) {
+    sb.from('bookmarks').insert({ member_id: state.myMemberId, url: url, title: title })
+      .then(function(result) {
+        if (result.error) { alert('Could not share: ' + result.error.message); return; }
+        return fetchAll().then(function() { renderTabs(); renderWorkspace(); });
+      });
   }
 
   function renderHub(container, memberId) {
@@ -1079,21 +1220,22 @@
     ]);
     container.appendChild(posLine);
 
-    // Cohort average
-    var cohortTotal = 0;
-    state.members.forEach(function(m) { cohortTotal += getProgressPercent(m.id); });
-    var cohortAvg = state.members.length > 0 ? Math.round(cohortTotal / state.members.length) : 0;
+    // Readiness score
+    var readiness = getReadinessScore(memberId);
+    var readinessColor = getReadinessColor(readiness);
 
     // BLUF bar
     var bluf = el('div', { className: 'bluf-bar' });
     [
       { value: streak + 'd', label: 'Streak' },
       { value: pct + '%', label: 'Complete' },
-      { value: cohortAvg + '%', label: 'Cohort Avg' },
+      { value: String(readiness), label: 'Readiness', color: readinessColor },
       { value: formatDate(lastActive), label: 'Last Check-in' }
     ].forEach(function(b) {
+      var valueEl = el('div', { className: 'bluf-value' }, b.value);
+      if (b.color) valueEl.style.color = b.color;
       bluf.appendChild(el('div', { className: 'bluf-item' }, [
-        el('div', { className: 'bluf-value' }, b.value),
+        valueEl,
         el('div', { className: 'bluf-label' }, b.label)
       ]));
     });
@@ -1267,6 +1409,7 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'activity' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'progress' }, handleRealtimeChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, handleRealtimeChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookmarks' }, handleRealtimeChange)
       .subscribe();
   }
 
