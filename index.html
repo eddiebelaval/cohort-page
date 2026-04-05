@@ -471,6 +471,27 @@
   .member-progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
 
   /* BLUF Bar: open, no cards */
+  .next-steps {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0;
+    padding: 24px 28px; margin-bottom: 28px;
+  }
+  .next-steps-title {
+    font-family: 'DM Serif Display', serif; font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .next-steps-list { list-style: none; padding: 0; margin: 0; }
+  .next-steps-list li {
+    font-size: 14px; line-height: 1.7; color: var(--ink);
+    padding: 4px 0; padding-left: 20px; position: relative;
+  }
+  .next-steps-list li::before {
+    content: attr(data-step);
+    position: absolute; left: 0; font-weight: 700; color: var(--accent);
+  }
+  .next-steps-list a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .next-steps-list a:hover { text-decoration: underline; }
+
   .hub-position {
     text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 2px;
     text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
@@ -1221,6 +1242,30 @@
       document.createTextNode(' -- ' + prog.done + ' of ' + prog.total + ' items complete')
     ]);
     container.appendChild(posLine);
+
+    // Next steps banner (only for owner, only when no progress)
+    if (isOwner && prog.done === 0) {
+      var steps = el('div', { className: 'next-steps' }, [
+        el('div', { className: 'next-steps-title' }, 'Welcome. Here\'s how to get started.'),
+        el('ol', { className: 'next-steps-list' }, [
+          el('li', { 'data-step': '1.' }, [
+            document.createTextNode('Start with '),
+            el('a', { href: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', target: '_blank' }, 'Claude 101'),
+            document.createTextNode('. It takes about an hour.')
+          ]),
+          el('li', { 'data-step': '2.' }, [
+            document.createTextNode('As you finish each section, check it off below.')
+          ]),
+          el('li', { 'data-step': '3.' }, [
+            document.createTextNode('Your progress shows on the dashboard so the cohort can see each other moving.')
+          ]),
+          el('li', { 'data-step': '4.' }, [
+            document.createTextNode('When all 3 courses are done, prep for the exam together. Target: Late June.')
+          ])
+        ])
+      ]);
+      container.appendChild(steps);
+    }
 
     // Readiness score
     var readiness = getReadinessScore(memberId);
