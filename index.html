@@ -1077,8 +1077,10 @@
     browseWrapper.appendChild(select);
     bar.appendChild(browseWrapper);
 
-    // Join button
-    bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
+    // Join button (only show if user hasn't joined yet)
+    if (!state.myMemberId) {
+      bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
+    }
   }
 
   function switchTab(tabId) {
