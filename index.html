@@ -613,35 +613,35 @@
         <div class="step-num">1</div>
         <div class="step-content">
           <strong>Claim your spot</strong>
-          <p>Hit the Claim Your Spot button at the top. Type your name and you're in.</p>
+          <p>Enter your name and email. You'll get a magic link to sign in. That's it.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Join the group chat</strong>
+          <p>Jump into the <a href="https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX" target="_blank">WhatsApp group</a>. This is where we coordinate, share notes, and keep each other accountable.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
         <div class="step-content">
           <strong>Start the free courses</strong>
           <p>Work through the courses on <a href="https://www.anthropic.com/learn" target="_blank">Anthropic Academy</a> at your own pace. Start with <a href="https://anthropic.skilljar.com/introduction-to-claude-cowork" target="_blank">Claude 101</a>, then <a href="https://anthropic.skilljar.com/claude-code-in-action" target="_blank">Claude Code in Action</a>, then <a href="https://claudecertifications.com/courses/ai-fluency-foundations" target="_blank">AI Fluency Foundations</a>. All free. All online.</p>
         </div>
       </div>
       <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <strong>Study as a crew</strong>
-          <p>We'll have a group chat for questions, study notes, and accountability. I've been through the material. I'll help you navigate it.</p>
-        </div>
-      </div>
-      <div class="step">
         <div class="step-num">4</div>
         <div class="step-content">
-          <strong>Prep for the exam</strong>
-          <p>The exam is multiple choice, scenario-based. Five domains, passing score 720/1000. We'll run through <a href="https://claudecertifications.com/claude-certified-architect/practice-questions" target="_blank">practice questions</a> and <a href="https://claudecertifications.com/claude-certified-architect/exam-guide" target="_blank">scenario walkthroughs</a> together.</p>
+          <strong>Track your progress</strong>
+          <p>Sign in and check off each section as you complete it. Your progress shows on the dashboard so the crew can see each other moving forward.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">5</div>
         <div class="step-content">
           <strong>Get certified</strong>
-          <p>Earn the <strong>Claude Certified Architect</strong> credential issued by Anthropic. Add it to LinkedIn, your resume, your life.</p>
+          <p>Once all courses are done, prep for the exam together. Target: Late June. Earn the <strong>Claude Certified Architect</strong> credential issued by Anthropic.</p>
         </div>
       </div>
     </div>
@@ -1349,21 +1349,23 @@
     // Next steps banner (only for owner, only when no progress)
     if (isOwner && prog.done === 0) {
       var steps = el('div', { className: 'next-steps' }, [
-        el('div', { className: 'next-steps-title' }, 'Welcome. Here\'s how to get started.'),
+        el('div', { className: 'next-steps-title' }, 'You\'re in. Here\'s what to do next.'),
         el('ol', { className: 'next-steps-list' }, [
           el('li', { 'data-step': '1.' }, [
+            document.createTextNode('Join the '),
+            el('a', { href: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', target: '_blank' }, 'WhatsApp group'),
+            document.createTextNode(' so we can coordinate.')
+          ]),
+          el('li', { 'data-step': '2.' }, [
             document.createTextNode('Start with '),
             el('a', { href: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', target: '_blank' }, 'Claude 101'),
             document.createTextNode('. It takes about an hour.')
           ]),
-          el('li', { 'data-step': '2.' }, [
-            document.createTextNode('As you finish each section, check it off below.')
-          ]),
           el('li', { 'data-step': '3.' }, [
-            document.createTextNode('Your progress shows on the dashboard so the cohort can see each other moving.')
+            document.createTextNode('As you finish each section, check it off below. Your progress shows on the dashboard.')
           ]),
           el('li', { 'data-step': '4.' }, [
-            document.createTextNode('When all 3 courses are done, prep for the exam together. Target: Late June.')
+            document.createTextNode('When all 3 courses are done, we prep for the exam together. Target: Late June.')
           ])
         ])
       ]);
