@@ -1621,15 +1621,55 @@
     container.textContent = '';
     var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:40px 0;' });
 
-    section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' }, 'Welcome'));
-    section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
-      'Looks like you\'re new. What should we call you?'));
+    // Check if there are unclaimed members (no email set)
+    var unclaimed = state.members.filter(function(m) { return !m.email; });
+
+    if (unclaimed.length > 0) {
+      // Show claim option first
+      section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' }, 'Already signed up?'));
+      section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
+        'If you already claimed a spot, select your name below to link your email.'));
+
+      var selectWrap = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+      var memberSelect = document.createElement('select');
+      memberSelect.className = 'bookmark-input';
+      memberSelect.style.cssText = 'width:100%;';
+      memberSelect.appendChild(el('option', { value: '' }, 'Select your name...'));
+      unclaimed.forEach(function(m) {
+        memberSelect.appendChild(el('option', { value: m.id }, m.name));
+      });
+      selectWrap.appendChild(memberSelect);
+
+      var claimBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
+        var memberId = memberSelect.value;
+        if (!memberId) { alert('Please select your name.'); return; }
+        claimBtn.textContent = 'Linking...';
+        claimBtn.disabled = true;
+        sb.from('members').update({ email: email }).eq('id', memberId)
+          .then(function(result) {
+            if (result.error) { alert('Error: ' + result.error.message); claimBtn.textContent = 'Link my account'; claimBtn.disabled = false; return; }
+            return signInWithEmail(email);
+          });
+      } }, 'Link my account');
+      selectWrap.appendChild(claimBtn);
+      section.appendChild(selectWrap);
+
+      // Divider
+      section.appendChild(el('div', { style: 'text-align:center;color:var(--muted);font-size:13px;margin:24px 0;' }, 'or'));
+
+      // New member option
+      section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:12px;' }, 'New here? Enter your name to join.'));
+    } else {
+      section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' }, 'Welcome'));
+      section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
+        'What should we call you?'));
+    }
 
     var form = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
     var nameInput = el('input', { className: 'bookmark-input', placeholder: 'First name', type: 'text', style: 'flex:1;' });
     form.appendChild(nameInput);
 
-    var submitBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
+    var submitBtn = el('button', { className: unclaimed.length > 0 ? 'bookmark-submit' : 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
       var name = nameInput.value.trim();
       if (!name) { alert('Please enter your name.'); return; }
       joinWithEmail(name, email);
