@@ -1138,8 +1138,8 @@
     // Dashboard tab
     bar.appendChild(el('div', { className: 'tab' + (state.currentTab === 'dashboard' ? ' active' : ''), onclick: function() { switchTab('dashboard'); } }, 'Dashboard'));
 
-    // My Hub tab (only if user has joined)
-    if (state.myMemberId) {
+    // My Hub tab (only if authenticated)
+    if (authUser && state.myMemberId) {
       var myMember = state.members.find(function(m) { return m.id === state.myMemberId; });
       var isMyHub = state.currentTab === state.myMemberId;
       bar.appendChild(el('div', { className: 'tab' + (isMyHub ? ' active' : ''), onclick: function() { switchTab(state.myMemberId); } }, 'My Hub'));
@@ -1159,8 +1159,8 @@
     browseWrapper.appendChild(select);
     bar.appendChild(browseWrapper);
 
-    // Sign In / Sign Out
-    if (!state.myMemberId) {
+    // Sign In / Sign Out (based on auth session, not localStorage)
+    if (!authUser) {
       bar.appendChild(el('div', { className: 'tab' + (state.currentTab === 'auth' ? ' active' : ''), onclick: function() { switchTab('auth'); } }, 'Sign In'));
     } else {
       bar.appendChild(el('div', { className: 'tab', style: 'color:var(--muted);font-size:11px;', onclick: function() {
@@ -1599,7 +1599,11 @@
 
   // Keep showJoinModal for the BLUF button (redirects to auth tab now)
   function showJoinModal() {
-    if (state.myMemberId) { alert('You already have a spot in the cohort.'); return; }
+    if (authUser && state.myMemberId) {
+      // Already fully authenticated -- go to their hub
+      switchTab(state.myMemberId);
+      return;
+    }
     switchTab('auth');
   }
   window.showJoinModal = showJoinModal;
