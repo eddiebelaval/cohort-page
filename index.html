@@ -769,7 +769,9 @@
   // Supabase
   var SUPABASE_URL = 'https://rlzacttzdhmzypgjccri.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJsemFjdHR6ZGhtenlwZ2pjY3JpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0ODUxNDUsImV4cCI6MjA3NjA2MTE0NX0.3CctSlxwFg7ywUdJxSYyPrYtsc2SMeFEs08wru7kueo';
-  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: 'implicit' }
+  });
 
   var AVATAR_COLORS = ['#d4622b','#7c3aed','#0891b2','#16a34a','#dc2626','#ca8a04','#6366f1','#ec4899','#14b8a6','#f97316','#8b5cf6','#059669','#e11d48','#0284c7','#d97706','#4f46e5','#db2777','#0d9488','#ea580c','#7c3aed'];
 
