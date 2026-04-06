@@ -788,12 +788,80 @@
   var ALL_ITEM_KEYS = [];
   CURRICULUM.forEach(function(c) { c.items.forEach(function(i) { ALL_ITEM_KEYS.push(i.key); }); });
 
+  // Auth
+  var authUser = null;
+
   // State
   var state = {
     members: [], activity: [], progress: [], notes: [], bookmarks: [],
     currentTab: 'dashboard',
-    myMemberId: localStorage.getItem('cohort_member_id')
+    myMemberId: null
   };
+
+  // Auth state listener
+  sb.auth.onAuthStateChange(function(event, session) {
+    if (event === 'SIGNED_IN' && session) {
+      authUser = session.user;
+      if (window.location.hash.includes('access_token')) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+      linkAuthToMember(session.user).then(function() {
+        fetchAll().then(function() {
+          if (state.myMemberId) state.currentTab = state.myMemberId;
+          updateSlotGrid();
+          renderTabs();
+          renderWorkspace();
+        });
+      });
+    }
+    if (event === 'SIGNED_OUT') {
+      authUser = null;
+      state.myMemberId = null;
+      localStorage.removeItem('cohort_member_id');
+      state.currentTab = 'dashboard';
+      renderTabs();
+      renderWorkspace();
+    }
+  });
+
+  function linkAuthToMember(user) {
+    return sb.from('members').select('*').eq('email', user.email).maybeSingle()
+      .then(function(result) {
+        if (result.data && !result.data.auth_id) {
+          return sb.from('members').update({ auth_id: user.id }).eq('id', result.data.id)
+            .then(function() {
+              state.myMemberId = result.data.id;
+              localStorage.setItem('cohort_member_id', result.data.id);
+            });
+        } else if (result.data) {
+          state.myMemberId = result.data.id;
+          localStorage.setItem('cohort_member_id', result.data.id);
+        }
+        return Promise.resolve();
+      });
+  }
+
+  function resolveMyMemberId() {
+    if (authUser) {
+      var linked = state.members.find(function(m) { return m.auth_id === authUser.id; });
+      if (linked) {
+        state.myMemberId = linked.id;
+        localStorage.setItem('cohort_member_id', linked.id);
+        return Promise.resolve();
+      }
+    }
+    // Fallback: localStorage cache (transition period)
+    var cached = localStorage.getItem('cohort_member_id');
+    if (cached) {
+      var exists = state.members.some(function(m) { return m.id === cached; });
+      if (exists) {
+        state.myMemberId = cached;
+      } else {
+        localStorage.removeItem('cohort_member_id');
+      }
+    }
+    return Promise.resolve();
+  }
 
   // Data layer
   function fetchAll() {
@@ -815,15 +883,7 @@
     });
   }
 
-  function verifyIdentity() {
-    if (!state.myMemberId) return Promise.resolve();
-    var exists = state.members.some(function(m) { return m.id === state.myMemberId; });
-    if (!exists) {
-      localStorage.removeItem('cohort_member_id');
-      state.myMemberId = null;
-    }
-    return Promise.resolve();
-  }
+  // verifyIdentity replaced by resolveMyMemberId (defined above)
 
   // Helpers
   function toDateKey(d) { return d.toISOString().slice(0, 10); }
@@ -1098,9 +1158,20 @@
     browseWrapper.appendChild(select);
     bar.appendChild(browseWrapper);
 
-    // Join button (only show if user hasn't joined yet)
+    // Sign In / Sign Out
     if (!state.myMemberId) {
-      bar.appendChild(el('div', { className: 'tab add-tab', onclick: showJoinModal }, '+'));
+      bar.appendChild(el('div', { className: 'tab' + (state.currentTab === 'auth' ? ' active' : ''), onclick: function() { switchTab('auth'); } }, 'Sign In'));
+    } else {
+      bar.appendChild(el('div', { className: 'tab', style: 'color:var(--muted);font-size:11px;', onclick: function() {
+        sb.auth.signOut().then(function() {
+          state.myMemberId = null;
+          authUser = null;
+          localStorage.removeItem('cohort_member_id');
+          state.currentTab = 'dashboard';
+          renderTabs();
+          renderWorkspace();
+        });
+      } }, 'Sign Out'));
     }
   }
 
@@ -1128,7 +1199,9 @@
   function renderWorkspace() {
     var container = document.getElementById('workspace-content');
     container.textContent = '';
-    if (state.currentTab === 'dashboard') {
+    if (state.currentTab === 'auth') {
+      renderAuthForm(container);
+    } else if (state.currentTab === 'dashboard') {
       renderDashboard(container);
     } else {
       renderHub(container, state.currentTab);
@@ -1243,20 +1316,33 @@
     ]);
     container.appendChild(posLine);
 
-    // Identity recovery: let someone claim a hub if they lost their localStorage
-    if (!state.myMemberId) {
+    // Claim flow: let someone claim an unclaimed hub with their email
+    if (!state.myMemberId && !member.auth_id) {
+      var claimSection = el('div', { style: 'text-align:center;margin-bottom:20px;' });
+      var claimEmail = el('input', { className: 'bookmark-input', type: 'email', placeholder: 'Enter your email to claim this hub', style: 'width:250px;margin-right:8px;' });
       var claimBtn = el('button', {
-        style: 'display:block;margin:0 auto 20px;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;color:var(--accent);background:none;border:1px solid var(--accent);padding:6px 16px;border-radius:6px;cursor:pointer;',
+        className: 'bookmark-submit',
         onclick: function() {
-          if (confirm('Claim this hub as ' + member.name + '? This lets you check off items and edit notes.')) {
-            localStorage.setItem('cohort_member_id', memberId);
-            state.myMemberId = memberId;
-            renderTabs();
-            renderWorkspace();
-          }
+          var email = claimEmail.value.trim();
+          if (!email) return;
+          sb.from('members').update({ email: email }).eq('id', member.id)
+            .then(function(result) {
+              if (result.error) { alert('Error: ' + result.error.message); return; }
+              return sb.auth.signInWithOtp({
+                email: email,
+                options: { emailRedirectTo: window.location.origin + window.location.pathname }
+              });
+            })
+            .then(function(result) {
+              if (result && result.error) { alert('Error: ' + result.error.message); return; }
+              var container = document.getElementById('workspace-content');
+              showCheckEmailMessage(container, email);
+            });
         }
-      }, 'This is me');
-      container.appendChild(claimBtn);
+      }, 'Claim this hub');
+      claimSection.appendChild(claimEmail);
+      claimSection.appendChild(claimBtn);
+      container.appendChild(claimSection);
     }
 
     // Next steps banner (only for owner, only when no progress)
@@ -1399,30 +1485,121 @@
     badgeEl.appendChild(document.createTextNode(' Spots Available'));
   }
 
-  // Actions
-  function showJoinModal() {
-    if (state.myMemberId) { alert('You already have a spot in the cohort.'); return; }
-    var name = prompt('What\'s your first name?');
-    if (name && name.trim()) joinCohort(name.trim());
-  }
-  window.showJoinModal = showJoinModal;
+  // Auth UI
+  function renderAuthForm(container) {
+    var isJoinMode = true;
+    var messageEl = null;
 
-  function joinCohort(name) {
+    function render() {
+      container.textContent = '';
+      var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:40px 0;' });
+
+      section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' },
+        isJoinMode ? 'Join the Cohort' : 'Welcome Back'));
+      section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
+        isJoinMode ? 'Enter your name and email to claim your spot.' : 'Enter your email to sign in.'));
+
+      var form = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+
+      var nameInput;
+      if (isJoinMode) {
+        nameInput = el('input', { className: 'bookmark-input', placeholder: 'First name', type: 'text', style: 'flex:1;' });
+        form.appendChild(nameInput);
+      }
+
+      var emailInput = el('input', { className: 'bookmark-input', placeholder: 'you@email.com', type: 'email', style: 'flex:1;' });
+      form.appendChild(emailInput);
+
+      var submitBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
+        var email = emailInput.value.trim();
+        if (!email) { alert('Please enter your email.'); return; }
+        if (isJoinMode) {
+          var name = nameInput.value.trim();
+          if (!name) { alert('Please enter your name.'); return; }
+          joinWithEmail(name, email);
+        } else {
+          signInWithEmail(email);
+        }
+      } }, isJoinMode ? 'Join the Cohort' : 'Send me a link');
+      form.appendChild(submitBtn);
+
+      section.appendChild(form);
+
+      // Toggle link
+      var toggleText = isJoinMode ? 'Already have a spot? ' : 'New here? ';
+      var toggleLink = el('a', { href: '#', style: 'color:var(--accent);font-weight:600;text-decoration:none;', onclick: function(e) {
+        e.preventDefault();
+        isJoinMode = !isJoinMode;
+        render();
+      } }, isJoinMode ? 'Sign in' : 'Join the cohort');
+      section.appendChild(el('p', { style: 'font-size:13px;color:var(--muted);text-align:center;margin-top:16px;' }, [
+        document.createTextNode(toggleText), toggleLink
+      ]));
+
+      if (messageEl) section.appendChild(messageEl);
+      container.appendChild(section);
+    }
+
+    render();
+  }
+
+  function showCheckEmailMessage(container, email) {
+    container.textContent = '';
+    var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:60px 0;text-align:center;' });
+    section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:12px;' }, 'Check your email'));
+    section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);line-height:1.6;' }, [
+      document.createTextNode('We sent a login link to '),
+      el('strong', { style: 'color:var(--ink);' }, email),
+      document.createTextNode('. Click the link to sign in.')
+    ]));
+    container.appendChild(section);
+  }
+
+  function joinWithEmail(name, email) {
     var color = AVATAR_COLORS[state.members.length] || '#999999';
-    sb.from('members').insert({ name: name, color: color }).select().single()
+    // Insert member row first (with email, auth_id linked later)
+    sb.from('members').insert({ name: name, email: email, color: color }).select().single()
       .then(function(result) {
         if (result.error) {
-          if (result.error.code === '23505') alert('That name is already taken. Try a different one.');
+          if (result.error.code === '23505') alert('That name or email is already taken. Try a different one.');
           else alert('Something went wrong: ' + result.error.message);
           return;
         }
-        localStorage.setItem('cohort_member_id', result.data.id);
-        state.myMemberId = result.data.id;
+        // Create notes row
         return sb.from('notes').insert({ member_id: result.data.id, content: '' })
-          .then(function() { return fetchAll(); })
-          .then(function() { updateSlotGrid(); switchTab(result.data.id); });
+          .then(function() {
+            // Send magic link
+            return sb.auth.signInWithOtp({
+              email: email,
+              options: { emailRedirectTo: window.location.origin + window.location.pathname }
+            });
+          })
+          .then(function(authResult) {
+            if (authResult.error) { alert('Could not send login link: ' + authResult.error.message); return; }
+            var container = document.getElementById('workspace-content');
+            showCheckEmailMessage(container, email);
+            return fetchAll().then(function() { updateSlotGrid(); });
+          });
       });
   }
+
+  function signInWithEmail(email) {
+    sb.auth.signInWithOtp({
+      email: email,
+      options: { emailRedirectTo: window.location.origin + window.location.pathname }
+    }).then(function(result) {
+      if (result.error) { alert('Could not send login link: ' + result.error.message); return; }
+      var container = document.getElementById('workspace-content');
+      showCheckEmailMessage(container, email);
+    });
+  }
+
+  // Keep showJoinModal for the BLUF button (redirects to auth tab now)
+  function showJoinModal() {
+    if (state.myMemberId) { alert('You already have a spot in the cohort.'); return; }
+    switchTab('auth');
+  }
+  window.showJoinModal = showJoinModal;
 
   function toggleItem(itemKey) {
     if (!state.myMemberId) return;
@@ -1499,20 +1676,24 @@
   }
 
   // Init
-  fetchAll()
-    .then(function() { return verifyIdentity(); })
-    .then(function() {
-      updateSlotGrid();
-      if (state.myMemberId) state.currentTab = state.myMemberId;
-      renderTabs();
-      renderWorkspace();
-      subscribeRealtime();
-      if (state.myMemberId) {
-        setTimeout(function() {
-          document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
-        }, 300);
-      }
-    });
+  sb.auth.getSession().then(function(result) {
+    var session = result.data.session;
+    if (session) authUser = session.user;
+    return fetchAll();
+  }).then(function() {
+    return resolveMyMemberId();
+  }).then(function() {
+    updateSlotGrid();
+    if (state.myMemberId) state.currentTab = state.myMemberId;
+    renderTabs();
+    renderWorkspace();
+    subscribeRealtime();
+    if (state.myMemberId) {
+      setTimeout(function() {
+        document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  });
 })();
 </script>
 
