@@ -589,7 +589,7 @@
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="landing">
 
   <div class="badge" id="badge"><span class="dot"></span> Spots Available</div>
 
@@ -843,6 +843,7 @@
           updateSlotGrid();
           renderTabs();
           renderWorkspace();
+          if (typeof updateLayout === 'function') updateLayout();
         });
       });
     }
@@ -853,6 +854,7 @@
       state.currentTab = 'dashboard';
       renderTabs();
       renderWorkspace();
+      if (typeof updateLayout === 'function') updateLayout();
     }
   });
 
@@ -1261,11 +1263,77 @@
       container.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
     }
 
+    // Recent activity feed
+    renderActivityFeed(container);
+
     // Shared resources
     renderBookmarksSection(container);
 
     // Team heatmap
     container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
+  }
+
+  function renderActivityFeed(container) {
+    // Build recent events from activity + member join data
+    var events = [];
+
+    // Member joins (from created_at)
+    state.members.forEach(function(m) {
+      var d = new Date(m.created_at);
+      events.push({ date: d, text: m.name + ' joined the cohort', type: 'join' });
+    });
+
+    // Course completions (from progress data)
+    CURRICULUM.forEach(function(course) {
+      state.members.forEach(function(m) {
+        var allDone = course.items.every(function(i) { return isItemDone(m.id, i.key); });
+        if (allDone) {
+          // Find the latest completed_at for this course
+          var latest = null;
+          course.items.forEach(function(i) {
+            var p = state.progress.find(function(pr) { return pr.member_id === m.id && pr.item_key === i.key && pr.completed; });
+            if (p && p.completed_at && (!latest || new Date(p.completed_at) > latest)) {
+              latest = new Date(p.completed_at);
+            }
+          });
+          if (latest) {
+            events.push({ date: latest, text: m.name + ' completed ' + course.course, type: 'complete' });
+          }
+        }
+      });
+    });
+
+    // Sort newest first, take top 8
+    events.sort(function(a, b) { return b.date - a.date; });
+    events = events.slice(0, 8);
+
+    if (events.length === 0) return;
+
+    var section = el('div', { style: 'margin-bottom:36px;' });
+    section.appendChild(el('div', { className: 'section-label' }, 'Recent Activity'));
+
+    events.forEach(function(ev) {
+      var ago = formatTimeAgo(ev.date);
+      var row = el('div', { style: 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;' }, [
+        el('span', { style: 'color:var(--ink);' }, ev.text),
+        el('span', { style: 'color:var(--muted);font-size:11px;white-space:nowrap;margin-left:12px;' }, ago)
+      ]);
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  }
+
+  function formatTimeAgo(date) {
+    var now = new Date();
+    var diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    var days = Math.floor(diff / 86400);
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + 'd ago';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   function renderBookmarksSection(container) {
@@ -1495,15 +1563,17 @@
     [
       { value: streak + 'd', label: 'Streak' },
       { value: pct + '%', label: 'Complete' },
-      { value: String(readiness), label: 'Readiness', color: readinessColor },
+      { value: String(readiness), label: 'Readiness', color: readinessColor, tooltip: getReadinessLabel(readiness) + ': based on courses, streak, recency, and notes' },
       { value: formatDate(lastActive), label: 'Last Check-in' }
     ].forEach(function(b) {
       var valueEl = el('div', { className: 'bluf-value' }, b.value);
       if (b.color) valueEl.style.color = b.color;
-      bluf.appendChild(el('div', { className: 'bluf-item' }, [
+      var item = el('div', { className: 'bluf-item' }, [
         valueEl,
         el('div', { className: 'bluf-label' }, b.label)
-      ]));
+      ]);
+      if (b.tooltip) item.title = b.tooltip;
+      bluf.appendChild(item);
     });
     container.appendChild(bluf);
 
@@ -1805,6 +1875,30 @@
     }, 300);
   }
 
+  // Layout: flip workspace above landing for signed-in members
+  function updateLayout() {
+    var landing = document.getElementById('landing');
+    var workspace = document.getElementById('workspace');
+    if (authUser && state.myMemberId) {
+      // Signed in: workspace first, landing below
+      workspace.style.order = '-1';
+      landing.parentNode.style.display = 'flex';
+      landing.parentNode.style.flexDirection = 'column';
+      landing.style.borderTop = '1px solid var(--border)';
+      landing.style.marginTop = '0';
+      workspace.querySelector('.container').style.borderTop = 'none';
+    } else {
+      // Not signed in: normal order
+      workspace.style.order = '';
+      if (landing.parentNode.style.display === 'flex') {
+        landing.parentNode.style.display = '';
+        landing.parentNode.style.flexDirection = '';
+      }
+      landing.style.borderTop = '';
+      workspace.querySelector('.container').style.borderTop = '';
+    }
+  }
+
   // Init
   sb.auth.getSession().then(function(result) {
     var session = result.data.session;
@@ -1817,12 +1911,8 @@
     if (state.myMemberId) state.currentTab = state.myMemberId;
     renderTabs();
     renderWorkspace();
+    updateLayout();
     subscribeRealtime();
-    if (state.myMemberId) {
-      setTimeout(function() {
-        document.getElementById('workspace').scrollIntoView({ behavior: 'smooth' });
-      }, 300);
-    }
   });
 })();
 </script>
