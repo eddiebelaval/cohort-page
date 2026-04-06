@@ -1490,7 +1490,7 @@
 
   // Auth UI
   function renderAuthForm(container) {
-    var isJoinMode = true;
+    var isJoinMode = false;
     var messageEl = null;
 
     function render() {
@@ -1564,7 +1564,7 @@
     sb.from('members').insert({ name: name, email: email, color: color }).select().single()
       .then(function(result) {
         if (result.error) {
-          if (result.error.code === '23505') alert('That name or email is already taken. Try a different one.');
+          if (result.error.code === '23505') alert('That name or email already exists. If you already have a spot, use Sign In instead.');
           else alert('Something went wrong: ' + result.error.message);
           return;
         }
