@@ -555,11 +555,6 @@
   .course-item-label a:hover { color: var(--ink); }
 
   /* Exam Prep: barely there */
-  .exam-prep { padding: 24px 0 0; margin-bottom: 0; border: none; }
-  .exam-prep-title { font-weight: 600; font-size: 14px; margin-bottom: 8px; letter-spacing: 0.2px; }
-  .exam-prep-link { display: block; padding: 6px 0; font-size: 13px; }
-  .exam-prep-link a { color: var(--muted); text-decoration: none; font-weight: 500; transition: color 0.15s; }
-  .exam-prep-link a:hover { color: var(--accent); }
 
   /* Notes: minimal container */
   .notes-section { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border); }
@@ -822,12 +817,6 @@
   // Combined curriculum (all courses, used for checklists and progress tracking)
   var CURRICULUM = CPN_COURSES.concat(CERT_COURSES);
 
-  var EXAM_RESOURCES = [
-    { label: 'Practice Questions', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions' },
-    { label: 'Exam Guide', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide' },
-    { label: 'Study Guide', url: 'https://claudecertifications.com/claude-certified-architect/study-guide' }
-  ];
-
   var ALL_ITEM_KEYS = [];
   CURRICULUM.forEach(function(c) { c.items.forEach(function(i) { ALL_ITEM_KEYS.push(i.key); }); });
 
@@ -925,8 +914,6 @@
       buildIndexes();
     });
   }
-
-  // verifyIdentity replaced by resolveMyMemberId (defined above)
 
   // Helpers
   function toDateKey(d) { return d.toISOString().slice(0, 10); }
