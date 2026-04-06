@@ -1488,62 +1488,63 @@
     badgeEl.appendChild(document.createTextNode(' Spots Available'));
   }
 
-  // Auth UI
+  // Auth UI -- unified flow: email first, name if new
   function renderAuthForm(container) {
-    var isJoinMode = false;
-    var messageEl = null;
+    container.textContent = '';
+    var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:40px 0;' });
 
-    function render() {
-      container.textContent = '';
-      var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:40px 0;' });
+    section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' }, 'Sign In'));
+    section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
+      'Enter your email. If you\'re new, we\'ll ask for your name next.'));
 
-      section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' },
-        isJoinMode ? 'Join the Cohort' : 'Welcome Back'));
-      section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
-        isJoinMode ? 'Enter your name and email to claim your spot.' : 'Enter your email to sign in.'));
+    var form = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+    var emailInput = el('input', { className: 'bookmark-input', placeholder: 'you@email.com', type: 'email', style: 'flex:1;' });
+    form.appendChild(emailInput);
 
-      var form = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+    var submitBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
+      var email = emailInput.value.trim();
+      if (!email) { alert('Please enter your email.'); return; }
+      submitBtn.textContent = 'Checking...';
+      submitBtn.disabled = true;
+      // Check if this email already exists in the cohort
+      sb.from('members').select('id').eq('email', email).maybeSingle()
+        .then(function(result) {
+          if (result.data) {
+            // Existing member -- send magic link directly
+            return signInWithEmail(email);
+          } else {
+            // New member -- ask for name
+            renderNameStep(container, email);
+          }
+        });
+    } }, 'Continue');
+    form.appendChild(submitBtn);
 
-      var nameInput;
-      if (isJoinMode) {
-        nameInput = el('input', { className: 'bookmark-input', placeholder: 'First name', type: 'text', style: 'flex:1;' });
-        form.appendChild(nameInput);
-      }
+    section.appendChild(form);
+    container.appendChild(section);
+  }
 
-      var emailInput = el('input', { className: 'bookmark-input', placeholder: 'you@email.com', type: 'email', style: 'flex:1;' });
-      form.appendChild(emailInput);
+  function renderNameStep(container, email) {
+    container.textContent = '';
+    var section = el('div', { style: 'max-width:400px;margin:0 auto;padding:40px 0;' });
 
-      var submitBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
-        var email = emailInput.value.trim();
-        if (!email) { alert('Please enter your email.'); return; }
-        if (isJoinMode) {
-          var name = nameInput.value.trim();
-          if (!name) { alert('Please enter your name.'); return; }
-          joinWithEmail(name, email);
-        } else {
-          signInWithEmail(email);
-        }
-      } }, isJoinMode ? 'Join the Cohort' : 'Send me a link');
-      form.appendChild(submitBtn);
+    section.appendChild(el('h2', { style: 'font-family:DM Serif Display,serif;font-size:24px;margin-bottom:8px;text-align:center;' }, 'Welcome'));
+    section.appendChild(el('p', { style: 'font-size:14px;color:var(--muted);text-align:center;margin-bottom:24px;' },
+      'Looks like you\'re new. What should we call you?'));
 
-      section.appendChild(form);
+    var form = el('div', { style: 'display:flex;flex-direction:column;gap:12px;' });
+    var nameInput = el('input', { className: 'bookmark-input', placeholder: 'First name', type: 'text', style: 'flex:1;' });
+    form.appendChild(nameInput);
 
-      // Toggle link
-      var toggleText = isJoinMode ? 'Already have a spot? ' : 'New here? ';
-      var toggleLink = el('a', { href: '#', style: 'color:var(--accent);font-weight:600;text-decoration:none;', onclick: function(e) {
-        e.preventDefault();
-        isJoinMode = !isJoinMode;
-        render();
-      } }, isJoinMode ? 'Sign in' : 'Join the cohort');
-      section.appendChild(el('p', { style: 'font-size:13px;color:var(--muted);text-align:center;margin-top:16px;' }, [
-        document.createTextNode(toggleText), toggleLink
-      ]));
+    var submitBtn = el('button', { className: 'cta-btn', style: 'cursor:pointer;border:none;width:100%;font-size:14px;padding:12px;', onclick: function() {
+      var name = nameInput.value.trim();
+      if (!name) { alert('Please enter your name.'); return; }
+      joinWithEmail(name, email);
+    } }, 'Join the Cohort');
+    form.appendChild(submitBtn);
 
-      if (messageEl) section.appendChild(messageEl);
-      container.appendChild(section);
-    }
-
-    render();
+    section.appendChild(form);
+    container.appendChild(section);
   }
 
   function showCheckEmailMessage(container, email) {
