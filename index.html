@@ -773,18 +773,41 @@
 
   var AVATAR_COLORS = ['#d4622b','#7c3aed','#0891b2','#16a34a','#dc2626','#ca8a04','#6366f1','#ec4899','#14b8a6','#f97316','#8b5cf6','#059669','#e11d48','#0284c7','#d97706','#4f46e5','#db2777','#0d9488','#ea580c','#7c3aed'];
 
-  var CURRICULUM = [
-    { course: 'Claude 101', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
-      { key: 'c101_intro', label: 'Introduction to Claude' },
-      { key: 'c101_prompts', label: 'Prompt Engineering Basics' },
-      { key: 'c101_tools', label: 'Working with Tools' },
-      { key: 'c101_best', label: 'Best Practices' }
+  // CPN Learning Path courses (the gate to Partner Network)
+  var CPN_COURSES = [
+    { course: 'Introduction to Agent Skills', url: 'https://anthropic.skilljar.com/introduction-to-agent-skills', items: [
+      { key: 'ias_building', label: 'Building Skills' },
+      { key: 'ias_configuring', label: 'Configuration and Triggers' },
+      { key: 'ias_sharing', label: 'Sharing and Distribution' },
+      { key: 'ias_advanced', label: 'Subagents and Troubleshooting' }
+    ]},
+    { course: 'Building with the Claude API', url: 'https://anthropic.skilljar.com/claude-with-the-anthropic-api', items: [
+      { key: 'api_setup', label: 'Setup and Authentication' },
+      { key: 'api_prompts', label: 'Prompts and Conversations' },
+      { key: 'api_tools', label: 'Tool Use and RAG' },
+      { key: 'api_advanced', label: 'Agents and Deployment' }
+    ]},
+    { course: 'Introduction to MCP', url: 'https://anthropic.skilljar.com/introduction-to-model-context-protocol', items: [
+      { key: 'mcp_architecture', label: 'Architecture and Design' },
+      { key: 'mcp_servers', label: 'Building Servers' },
+      { key: 'mcp_resources', label: 'Resources and Prompts' },
+      { key: 'mcp_integration', label: 'Integration Patterns' }
     ]},
     { course: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', items: [
       { key: 'cca_start', label: 'Getting Started' },
       { key: 'cca_codegen', label: 'Code Generation' },
       { key: 'cca_debug', label: 'Debugging with Claude' },
       { key: 'cca_advanced', label: 'Advanced Patterns' }
+    ]}
+  ];
+
+  // Cert Prep courses (for the Claude Certified Architect exam)
+  var CERT_COURSES = [
+    { course: 'Claude 101', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
+      { key: 'c101_intro', label: 'Introduction to Claude' },
+      { key: 'c101_prompts', label: 'Prompt Engineering Basics' },
+      { key: 'c101_tools', label: 'Working with Tools' },
+      { key: 'c101_best', label: 'Best Practices' }
     ]},
     { course: 'AI Fluency Foundations', url: 'https://claudecertifications.com/courses/ai-fluency-foundations', items: [
       { key: 'aif_fundamentals', label: 'AI Fundamentals' },
@@ -793,6 +816,9 @@
       { key: 'aif_exam', label: 'Exam Prep' }
     ]}
   ];
+
+  // Combined curriculum (all courses, used for checklists and progress tracking)
+  var CURRICULUM = CPN_COURSES.concat(CERT_COURSES);
 
   var EXAM_RESOURCES = [
     { label: 'Practice Questions', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions' },
@@ -935,14 +961,12 @@
   }
 
   function getMilestoneLabel(memberId) {
-    var c1 = CURRICULUM[0].items.every(function(i) { return isItemDone(memberId, i.key); });
-    var c2 = CURRICULUM[1].items.every(function(i) { return isItemDone(memberId, i.key); });
-    var c3 = CURRICULUM[2].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var cpnDone = CPN_COURSES.every(function(c) { return c.items.every(function(i) { return isItemDone(memberId, i.key); }); });
+    var certDone = CERT_COURSES.every(function(c) { return c.items.every(function(i) { return isItemDone(memberId, i.key); }); });
     var prog = getMemberProgress(memberId);
-    if (c1 && c2 && c3) return 'All Courses Done';
-    if (c1 && c2) return 'Course 3';
-    if (c1) return 'Course 2';
-    if (prog.done > 0) return 'Course 1';
+    if (cpnDone && certDone) return 'Exam Ready';
+    if (cpnDone) return 'Cert Prep';
+    if (prog.done > 0) return 'CPN Path';
     return 'Not Started';
   }
 
@@ -999,8 +1023,7 @@
     var header = el('div', { className: 'lane-header' });
     var headerTrack = el('div', { className: 'lane-header-track' });
     [
-      { label: 'C1', pct: 33 },
-      { label: 'C2', pct: 66 },
+      { label: 'CPN', pct: 67 },
       { label: 'Done', pct: 100 }
     ].forEach(function(m) {
       headerTrack.appendChild(el('div', { className: 'lane-milestone-label', style: 'left:' + m.pct + '%' }, m.label));
@@ -1039,7 +1062,7 @@
       // Track with fill and milestone lines
       var track = el('div', { className: 'lane-track' });
       track.appendChild(el('div', { className: 'lane-fill', style: 'width:' + Math.max(pct, 1.5) + '%;background:' + safeColor(member.color) }));
-      [33, 66, 100].forEach(function(m) {
+      [67, 100].forEach(function(m) {
         track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
       });
       row.appendChild(track);
@@ -1308,51 +1331,112 @@
       });
   }
 
-  function renderRoadmap(container, memberId) {
-    var c1Done = CURRICULUM[0].items.every(function(i) { return isItemDone(memberId, i.key); });
-    var c2Done = CURRICULUM[1].items.every(function(i) { return isItemDone(memberId, i.key); });
-    var c3Done = CURRICULUM[2].items.every(function(i) { return isItemDone(memberId, i.key); });
-    var allDone = c1Done && c2Done && c3Done;
+  function renderCourseBlock(container, course, memberId, isOwner) {
+    var completedCount = course.items.filter(function(item) { return isItemDone(memberId, item.key); }).length;
+    var badgeClass, badgeText;
+    if (completedCount === course.items.length) { badgeClass = 'done'; badgeText = 'Done'; }
+    else if (completedCount > 0) { badgeClass = 'in-progress'; badgeText = 'In Progress'; }
+    else { badgeClass = 'not-started'; badgeText = 'Not Started'; }
 
-    var steps = [
-      { title: 'Join the WhatsApp group', desc: 'Coordinate, share notes, keep each other accountable.', url: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', done: false, alwaysOpen: true },
-      { title: 'Complete Claude 101', desc: 'Introduction to Claude, prompt engineering, tools, best practices.', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', done: c1Done },
-      { title: 'Complete Claude Code in Action', desc: 'Getting started, code generation, debugging, advanced patterns.', url: 'https://anthropic.skilljar.com/claude-code-in-action', done: c2Done },
-      { title: 'Complete AI Fluency Foundations', desc: 'AI fundamentals, agentic systems, architecture, exam prep.', url: 'https://claudecertifications.com/courses/ai-fluency-foundations', done: c3Done },
-      { title: 'Review the Exam Guide', desc: 'Five domains, format, passing score, what to expect.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false },
-      { title: 'Work Through Practice Questions', desc: '33+ scenario-based questions with explanations.', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions', done: false },
-      { title: 'Take the Exam', desc: 'Scenario-based, 720/1000 to pass. Free. Issued by Anthropic.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false }
+    var block = el('div', { className: 'course-block' });
+    block.appendChild(el('div', { className: 'course-header' }, [
+      el('div', { className: 'course-title' }, [el('a', { href: course.url, target: '_blank' }, course.course)]),
+      el('div', { className: 'course-badge ' + badgeClass }, badgeText)
+    ]));
+    course.items.forEach(function(item) {
+      var isDone = isItemDone(memberId, item.key);
+      var checkNode = el('div', { className: 'check' + (isDone ? ' done' : '') + (isOwner ? '' : ' readonly') });
+      if (isDone) checkNode.textContent = '\u2713';
+      if (isOwner) checkNode.onclick = function() { toggleItem(item.key); };
+      block.appendChild(el('div', { className: 'course-item' }, [
+        checkNode,
+        el('div', { className: 'course-item-label' }, [el('a', { href: course.url, target: '_blank' }, item.label)])
+      ]));
+    });
+    container.appendChild(block);
+  }
+
+  function renderRoadmap(container, memberId) {
+    // Check course completion for each course
+    function isCourseComplete(course) {
+      return course.items.every(function(i) { return isItemDone(memberId, i.key); });
+    }
+
+    var cpnDone = CPN_COURSES.every(isCourseComplete);
+    var certDone = CERT_COURSES.every(isCourseComplete);
+    var allCoursesDone = cpnDone && certDone;
+
+    // Build phases with steps
+    var phases = [
+      { label: 'Join', desc: null, steps: [
+        { title: 'Join the WhatsApp group', desc: 'Coordinate, share notes, keep each other accountable.', url: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', done: false }
+      ]},
+      { label: 'CPN Learning Path', desc: 'These 4 courses get id8Labs into the Claude Partner Network. 10 of us need to complete all 4.', steps:
+        CPN_COURSES.map(function(c) {
+          return { title: c.course, desc: c.items.map(function(i) { return i.label; }).join(', ') + '.', url: c.url, done: isCourseComplete(c) };
+        })
+      },
+      { label: 'CPN Gate', desc: 'Eddie submits the completion form once 10+ people finish the learning path above.', steps: [
+        { title: 'CPN submission', desc: 'Eddie submits at clau.de/CPN-LearningPath. This gets id8Labs into the Partner Network.', url: null, done: false, manual: true }
+      ]},
+      { label: 'Cert Prep', desc: 'These courses prepare for the Claude Certified Architect exam.', steps:
+        CERT_COURSES.map(function(c) {
+          return { title: c.course, desc: c.items.map(function(i) { return i.label; }).join(', ') + '.', url: c.url, done: isCourseComplete(c) };
+        })
+      },
+      { label: 'Exam Prep', desc: 'Study materials for the scenario-based exam. Five domains, 720/1000 to pass.', steps: [
+        { title: 'Review the Exam Guide', desc: 'Five domains, format, passing score, what to expect.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false },
+        { title: 'Practice Questions', desc: '33+ scenario-based questions with explanations.', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions', done: false },
+        { title: '12-Week Study Plan', desc: 'Structured prep covering all 5 exam domains.', url: 'https://claudecertifications.com/claude-certified-architect/study-guide', done: false }
+      ]},
+      { label: 'Certification', desc: null, steps: [
+        { title: 'Take the Exam', desc: 'Scenario-based, 720/1000 to pass. Free. Issued by Anthropic. Target: Late June.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false }
+      ]}
     ];
 
-    // Find current step (first non-done, skipping step 1 which is always "open")
-    var currentIdx = -1;
-    for (var i = 1; i < steps.length; i++) {
-      if (!steps[i].done) { currentIdx = i; break; }
-    }
-    if (allDone) currentIdx = steps.length - 1;
+    // Find current step (first non-done across all phases)
+    var foundCurrent = false;
 
     var section = el('div', { className: 'roadmap' });
     section.appendChild(el('div', { className: 'section-label' }, 'Roadmap'));
 
-    steps.forEach(function(step, idx) {
-      var isCurrent = idx === currentIdx;
-      var isDone = step.done;
-      var stepClass = 'roadmap-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+    phases.forEach(function(phase) {
+      // Phase header
+      var phaseHeader = el('div', { style: 'margin-top:20px;margin-bottom:4px;' });
+      phaseHeader.appendChild(el('div', { style: 'font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);' }, phase.label));
+      if (phase.desc) {
+        phaseHeader.appendChild(el('div', { style: 'font-size:12px;color:var(--muted);margin-top:2px;margin-bottom:4px;' }, phase.desc));
+      }
+      section.appendChild(phaseHeader);
 
-      var checkClass = 'roadmap-check' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
-      var checkText = isDone ? '\u2713' : isCurrent ? '\u25B6' : '';
+      // Steps
+      phase.steps.forEach(function(step) {
+        var isCurrent = !foundCurrent && !step.done;
+        if (isCurrent) foundCurrent = true;
+        var isDone = step.done;
+        var stepClass = 'roadmap-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+        var checkClass = 'roadmap-check' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+        var checkText = isDone ? '\u2713' : isCurrent ? '\u25B6' : '';
 
-      var row = el('div', { className: stepClass }, [
-        el('div', { className: checkClass }, checkText),
-        el('div', { className: 'roadmap-body' }, [
-          el('div', { className: 'roadmap-title' }, step.title),
-          el('div', { className: 'roadmap-desc' }, step.desc)
-        ]),
-        (allDone && idx === steps.length - 1)
-          ? el('span', { className: 'roadmap-ready' }, 'Ready')
-          : el('a', { className: 'roadmap-link', href: step.url, target: '_blank' }, 'Open')
-      ]);
-      section.appendChild(row);
+        var actionEl;
+        if (allCoursesDone && step.title === 'Take the Exam') {
+          actionEl = el('span', { className: 'roadmap-ready' }, 'Ready');
+        } else if (step.url) {
+          actionEl = el('a', { className: 'roadmap-link', href: step.url, target: '_blank' }, 'Open');
+        } else {
+          actionEl = el('span', { style: 'font-size:11px;color:var(--muted);' }, step.manual ? 'Eddie' : '');
+        }
+
+        var row = el('div', { className: stepClass }, [
+          el('div', { className: checkClass }, checkText),
+          el('div', { className: 'roadmap-body' }, [
+            el('div', { className: 'roadmap-title' }, step.title),
+            el('div', { className: 'roadmap-desc' }, step.desc)
+          ]),
+          actionEl
+        ]);
+        section.appendChild(row);
+      });
     });
 
     container.appendChild(section);
@@ -1436,37 +1520,16 @@
 
     container.appendChild(renderHeatmap(heatmap, 'Activity (8 Weeks)', false));
 
-    // Curriculum
-    CURRICULUM.forEach(function(course) {
-      var completedCount = course.items.filter(function(item) { return isItemDone(memberId, item.key); }).length;
+    // Curriculum -- CPN Learning Path
+    container.appendChild(el('div', { className: 'section-label', style: 'margin-top:28px;' }, 'CPN Learning Path'));
+    CPN_COURSES.forEach(function(course) {
+      renderCourseBlock(container, course, memberId, isOwner);
+    });
 
-      var badgeClass, badgeText;
-      if (completedCount === course.items.length) { badgeClass = 'done'; badgeText = 'Done'; }
-      else if (completedCount > 0) { badgeClass = 'in-progress'; badgeText = 'In Progress'; }
-      else { badgeClass = 'not-started'; badgeText = 'Not Started'; }
-
-      var block = el('div', { className: 'course-block' });
-      var header = el('div', { className: 'course-header' }, [
-        el('div', { className: 'course-title' }, [
-          el('a', { href: course.url, target: '_blank' }, course.course)
-        ]),
-        el('div', { className: 'course-badge ' + badgeClass }, badgeText)
-      ]);
-      block.appendChild(header);
-
-      course.items.forEach(function(item) {
-        var isDone = isItemDone(memberId, item.key);
-        var checkNode = el('div', { className: 'check' + (isDone ? ' done' : '') + (isOwner ? '' : ' readonly') });
-        if (isDone) checkNode.textContent = '\u2713';
-        if (isOwner) checkNode.onclick = function() { toggleItem(item.key); };
-
-        var labelLink = el('a', { href: course.url, target: '_blank' }, item.label);
-        var labelDiv = el('div', { className: 'course-item-label' }, [labelLink]);
-
-        block.appendChild(el('div', { className: 'course-item' }, [checkNode, labelDiv]));
-      });
-
-      container.appendChild(block);
+    // Curriculum -- Cert Prep
+    container.appendChild(el('div', { className: 'section-label', style: 'margin-top:28px;' }, 'Cert Prep Courses'));
+    CERT_COURSES.forEach(function(course) {
+      renderCourseBlock(container, course, memberId, isOwner);
     });
 
     // Notes
