@@ -492,6 +492,34 @@
   .next-steps-list a { color: var(--accent); text-decoration: none; font-weight: 600; }
   .next-steps-list a:hover { text-decoration: underline; }
 
+  /* Roadmap */
+  .roadmap { margin-bottom: 28px; }
+  .roadmap-step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .roadmap-step:last-child { border-bottom: none; }
+  .roadmap-step.done { opacity: 0.45; }
+  .roadmap-step.current { border-left: 3px solid var(--accent); padding-left: 12px; opacity: 1; }
+  .roadmap-check {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0; color: var(--muted);
+  }
+  .roadmap-check.done { background: var(--green); border-color: var(--green); color: white; }
+  .roadmap-check.current { border-color: var(--accent); color: var(--accent); }
+  .roadmap-body { flex: 1; min-width: 0; }
+  .roadmap-title { font-size: 14px; font-weight: 600; }
+  .roadmap-step.current .roadmap-title { color: var(--accent); }
+  .roadmap-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .roadmap-link {
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .roadmap-link:hover { text-decoration: underline; }
+  .roadmap-ready { font-size: 11px; font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: 1px; }
+
   .hub-position {
     text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 2px;
     text-transform: uppercase; color: var(--muted); margin-bottom: 20px;
@@ -612,36 +640,22 @@
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-content">
-          <strong>Claim your spot</strong>
-          <p>Enter your name and email. You'll get a magic link to sign in. That's it.</p>
+          <strong>Sign in with your email</strong>
+          <p>Enter your email above. You'll get a magic link. Click it and you're in.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
         <div class="step-content">
-          <strong>Join the group chat</strong>
-          <p>Jump into the <a href="https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX" target="_blank">WhatsApp group</a>. This is where we coordinate, share notes, and keep each other accountable.</p>
+          <strong>Follow the roadmap in your hub</strong>
+          <p>Your hub has a step-by-step roadmap: courses to take, boxes to check, exam prep links. Everything you need in one place.</p>
         </div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
         <div class="step-content">
-          <strong>Start the free courses</strong>
-          <p>Work through the courses on <a href="https://www.anthropic.com/learn" target="_blank">Anthropic Academy</a> at your own pace. Start with <a href="https://anthropic.skilljar.com/introduction-to-claude-cowork" target="_blank">Claude 101</a>, then <a href="https://anthropic.skilljar.com/claude-code-in-action" target="_blank">Claude Code in Action</a>, then <a href="https://claudecertifications.com/courses/ai-fluency-foundations" target="_blank">AI Fluency Foundations</a>. All free. All online.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <strong>Track your progress</strong>
-          <p>Sign in and check off each section as you complete it. Your progress shows on the dashboard so the crew can see each other moving forward.</p>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">5</div>
-        <div class="step-content">
-          <strong>Get certified</strong>
-          <p>Once all courses are done, prep for the exam together. Target: Late June. Earn the <strong>Claude Certified Architect</strong> credential issued by Anthropic.</p>
+          <strong>We all take the exam in late June</strong>
+          <p>Three free courses, one exam, one credential. The <strong>Claude Certified Architect</strong> from Anthropic. We do it together.</p>
         </div>
       </div>
     </div>
@@ -1294,6 +1308,56 @@
       });
   }
 
+  function renderRoadmap(container, memberId) {
+    var c1Done = CURRICULUM[0].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var c2Done = CURRICULUM[1].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var c3Done = CURRICULUM[2].items.every(function(i) { return isItemDone(memberId, i.key); });
+    var allDone = c1Done && c2Done && c3Done;
+
+    var steps = [
+      { title: 'Join the WhatsApp group', desc: 'Coordinate, share notes, keep each other accountable.', url: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', done: false, alwaysOpen: true },
+      { title: 'Complete Claude 101', desc: 'Introduction to Claude, prompt engineering, tools, best practices.', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', done: c1Done },
+      { title: 'Complete Claude Code in Action', desc: 'Getting started, code generation, debugging, advanced patterns.', url: 'https://anthropic.skilljar.com/claude-code-in-action', done: c2Done },
+      { title: 'Complete AI Fluency Foundations', desc: 'AI fundamentals, agentic systems, architecture, exam prep.', url: 'https://claudecertifications.com/courses/ai-fluency-foundations', done: c3Done },
+      { title: 'Review the Exam Guide', desc: 'Five domains, format, passing score, what to expect.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false },
+      { title: 'Work Through Practice Questions', desc: '33+ scenario-based questions with explanations.', url: 'https://claudecertifications.com/claude-certified-architect/practice-questions', done: false },
+      { title: 'Take the Exam', desc: 'Scenario-based, 720/1000 to pass. Free. Issued by Anthropic.', url: 'https://claudecertifications.com/claude-certified-architect/exam-guide', done: false }
+    ];
+
+    // Find current step (first non-done, skipping step 1 which is always "open")
+    var currentIdx = -1;
+    for (var i = 1; i < steps.length; i++) {
+      if (!steps[i].done) { currentIdx = i; break; }
+    }
+    if (allDone) currentIdx = steps.length - 1;
+
+    var section = el('div', { className: 'roadmap' });
+    section.appendChild(el('div', { className: 'section-label' }, 'Roadmap'));
+
+    steps.forEach(function(step, idx) {
+      var isCurrent = idx === currentIdx;
+      var isDone = step.done;
+      var stepClass = 'roadmap-step' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+
+      var checkClass = 'roadmap-check' + (isDone ? ' done' : '') + (isCurrent ? ' current' : '');
+      var checkText = isDone ? '\u2713' : isCurrent ? '\u25B6' : '';
+
+      var row = el('div', { className: stepClass }, [
+        el('div', { className: checkClass }, checkText),
+        el('div', { className: 'roadmap-body' }, [
+          el('div', { className: 'roadmap-title' }, step.title),
+          el('div', { className: 'roadmap-desc' }, step.desc)
+        ]),
+        (allDone && idx === steps.length - 1)
+          ? el('span', { className: 'roadmap-ready' }, 'Ready')
+          : el('a', { className: 'roadmap-link', href: step.url, target: '_blank' }, 'Open')
+      ]);
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  }
+
   function renderHub(container, memberId) {
     var member = state.members.find(function(m) { return m.id === memberId; });
     if (!member) {
@@ -1346,31 +1410,8 @@
       container.appendChild(claimSection);
     }
 
-    // Next steps banner (only for owner, only when no progress)
-    if (isOwner && prog.done === 0) {
-      var steps = el('div', { className: 'next-steps' }, [
-        el('div', { className: 'next-steps-title' }, 'You\'re in. Here\'s what to do next.'),
-        el('ol', { className: 'next-steps-list' }, [
-          el('li', { 'data-step': '1.' }, [
-            document.createTextNode('Join the '),
-            el('a', { href: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', target: '_blank' }, 'WhatsApp group'),
-            document.createTextNode(' so we can coordinate.')
-          ]),
-          el('li', { 'data-step': '2.' }, [
-            document.createTextNode('Start with '),
-            el('a', { href: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', target: '_blank' }, 'Claude 101'),
-            document.createTextNode('. It takes about an hour.')
-          ]),
-          el('li', { 'data-step': '3.' }, [
-            document.createTextNode('As you finish each section, check it off below. Your progress shows on the dashboard.')
-          ]),
-          el('li', { 'data-step': '4.' }, [
-            document.createTextNode('When all 3 courses are done, we prep for the exam together. Target: Late June.')
-          ])
-        ])
-      ]);
-      container.appendChild(steps);
-    }
+    // Roadmap (always visible)
+    renderRoadmap(container, memberId);
 
     // Readiness score
     var readiness = getReadinessScore(memberId);
@@ -1427,17 +1468,6 @@
 
       container.appendChild(block);
     });
-
-    // Exam prep
-    var examBlock = el('div', { className: 'exam-prep' });
-    examBlock.appendChild(el('div', { className: 'exam-prep-title' }, 'Exam Prep Resources'));
-    EXAM_RESOURCES.forEach(function(res) {
-      var link = el('div', { className: 'exam-prep-link' }, [
-        el('a', { href: res.url, target: '_blank' }, res.label)
-      ]);
-      examBlock.appendChild(link);
-    });
-    container.appendChild(examBlock);
 
     // Notes
     var notesSection = el('div', { className: 'notes-section' });
