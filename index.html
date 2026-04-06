@@ -589,7 +589,7 @@
 </head>
 <body>
 
-<div class="container" id="landing">
+<div class="container" id="page-header">
 
   <div class="badge" id="badge"><span class="dot"></span> Spots Available</div>
 
@@ -609,6 +609,10 @@
     <div class="slots-grid" id="slots-grid"></div>
     <p class="slots-count" id="slots-count"></p>
   </div>
+
+</div>
+
+<div class="container" id="landing">
 
   <div class="cert-section">
     <h2>The certification</h2>
@@ -1875,27 +1879,26 @@
     }, 300);
   }
 
-  // Layout: flip workspace above landing for signed-in members
+  // Layout: flip workspace above landing details for signed-in members
+  // page-header always stays on top. Only #landing (cert details, how it works, etc.) moves below workspace.
   function updateLayout() {
     var landing = document.getElementById('landing');
     var workspace = document.getElementById('workspace');
     if (authUser && state.myMemberId) {
-      // Signed in: workspace first, landing below
-      workspace.style.order = '-1';
-      landing.parentNode.style.display = 'flex';
-      landing.parentNode.style.flexDirection = 'column';
-      landing.style.borderTop = '1px solid var(--border)';
-      landing.style.marginTop = '0';
-      workspace.querySelector('.container').style.borderTop = 'none';
-    } else {
-      // Not signed in: normal order
-      workspace.style.order = '';
-      if (landing.parentNode.style.display === 'flex') {
-        landing.parentNode.style.display = '';
-        landing.parentNode.style.flexDirection = '';
+      // Signed in: move landing details after workspace
+      if (workspace.nextElementSibling !== landing) {
+        workspace.parentNode.insertBefore(workspace, landing);
       }
-      landing.style.borderTop = '';
+      workspace.querySelector('.container').style.borderTop = 'none';
+      workspace.style.paddingTop = '0';
+    } else {
+      // Not signed in: landing before workspace (default HTML order)
+      var pageHeader = document.getElementById('page-header');
+      if (landing.nextElementSibling !== workspace) {
+        pageHeader.parentNode.insertBefore(landing, workspace);
+      }
       workspace.querySelector('.container').style.borderTop = '';
+      workspace.style.paddingTop = '';
     }
   }
 
