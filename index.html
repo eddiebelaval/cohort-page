@@ -1597,8 +1597,8 @@
           return { title: c.course, desc: c.items.map(function(i) { return i.label; }).join(', ') + '.', url: c.url, done: isCourseComplete(c) };
         })
       },
-      { label: 'CPN Gate', desc: 'Eddie submits the completion form once 10+ people finish the learning path above.', steps: [
-        { title: 'CPN submission', desc: 'Eddie submits at clau.de/CPN-LearningPath. This gets id8Labs into the Partner Network.', url: null, done: false, manual: true }
+      { label: 'CPN Gate', desc: 'id8Labs is accepted into CPN. Once 10+ of us finish the learning path, Eddie submits the completion form to confirm membership and unlock Partner Portal + certification enrollment.', steps: [
+        { title: 'CPN completion form', desc: 'Eddie submits at clau.de/CPN-LearningPath once 10+ people finish all 4 courses above. This confirms id8Labs membership.', url: null, done: false, manual: true }
       ]},
       { label: 'Cert Prep', desc: 'These courses prepare for the Claude Certified Architect exam.', steps:
         CERT_COURSES.map(function(c) {
