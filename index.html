@@ -1507,7 +1507,7 @@
       { label: 'Join', desc: null, steps: [
         { title: 'Join the WhatsApp group', desc: 'Coordinate, share notes, keep each other accountable.', url: 'https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX', done: false }
       ]},
-      { label: 'CPN Learning Path', desc: 'These 4 courses get id8Labs into the Claude Partner Network. 10 of us need to complete all 4.', steps:
+      { label: 'CPN Learning Path', desc: 'These 4 courses get id8Labs into the Claude Partner Network. 10 or more of us need to complete all 4.', steps:
         CPN_COURSES.map(function(c) {
           return { title: c.course, desc: c.items.map(function(i) { return i.label; }).join(', ') + '.', url: c.url, done: isCourseComplete(c) };
         })
