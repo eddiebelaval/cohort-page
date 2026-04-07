@@ -847,17 +847,25 @@
       { key: 'ias_troubleshooting', label: 'Troubleshooting skills' }
     ]},
     { course: 'Building with the Claude API', url: 'https://anthropic.skilljar.com/claude-with-the-anthropic-api', items: [
-      { key: 'api_getting_started', label: 'Getting started with Claude' },
-      { key: 'api_prompt_eng', label: 'Prompt engineering and evaluation' },
+      { key: 'api_intro', label: 'Introduction' },
+      { key: 'api_overview', label: 'Anthropic overview' },
+      { key: 'api_accessing', label: 'Accessing Claude with the API' },
+      { key: 'api_eval', label: 'Prompt evaluation' },
+      { key: 'api_prompt_eng', label: 'Prompt engineering techniques' },
       { key: 'api_tool_use', label: 'Tool use with Claude' },
-      { key: 'api_rag', label: 'Retrieval augmented generation' },
-      { key: 'api_mcp', label: 'Model Context Protocol (MCP)' },
-      { key: 'api_code_computer', label: 'Claude Code and Computer Use' },
-      { key: 'api_agents', label: 'Agents and workflows' }
+      { key: 'api_rag', label: 'RAG and Agentic Search' },
+      { key: 'api_features', label: 'Features of Claude' },
+      { key: 'api_mcp', label: 'Model Context Protocol' },
+      { key: 'api_apps', label: 'Anthropic apps - Claude Code and computer use' },
+      { key: 'api_agents', label: 'Agents and workflows' },
+      { key: 'api_final', label: 'Final assessment' },
+      { key: 'api_wrap', label: 'Wrapping up!' }
     ]},
     { course: 'Introduction to MCP', url: 'https://anthropic.skilljar.com/introduction-to-model-context-protocol', items: [
-      { key: 'mcp_fundamentals', label: 'MCP fundamentals and server development' },
-      { key: 'mcp_client', label: 'MCP client implementation and advanced features' }
+      { key: 'mcp_intro', label: 'Introduction' },
+      { key: 'mcp_servers', label: 'Hands-on with MCP servers' },
+      { key: 'mcp_clients', label: 'Connecting with MCP clients' },
+      { key: 'mcp_assessment', label: 'Assessment and wrap up' }
     ]},
     { course: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', items: [
       { key: 'cca_what', label: 'What is Claude Code? (3 lessons)' },
@@ -878,8 +886,16 @@
       { key: 'cowork_quiz', label: 'Check your understanding (Quiz)' }
     ]},
     { course: 'AI Fluency: Framework and Foundations', url: 'https://anthropic.skilljar.com/ai-fluency-framework-foundations', items: [
-      { key: 'aif_fundamentals', label: 'AI Fundamentals and Framework' },
-      { key: 'aif_practical', label: 'Practical AI Skills' }
+      { key: 'aif_intro', label: 'Introduction to AI Fluency' },
+      { key: 'aif_framework', label: 'The AI Fluency Framework' },
+      { key: 'aif_deep1', label: 'Deep Dive 1: What is Generative AI?' },
+      { key: 'aif_delegation', label: 'Delegation' },
+      { key: 'aif_description', label: 'Description' },
+      { key: 'aif_deep2', label: 'Deep Dive 2: Effective prompting techniques' },
+      { key: 'aif_discernment', label: 'Discernment' },
+      { key: 'aif_loop', label: 'The Description-Discernment loop' },
+      { key: 'aif_diligence', label: 'Diligence' },
+      { key: 'aif_conclusion', label: 'Conclusion and certificate' }
     ]}
   ];
 
@@ -1083,7 +1099,7 @@
     var header = el('div', { className: 'lane-header' });
     var headerTrack = el('div', { className: 'lane-header-track' });
     [
-      { label: 'CPN', pct: 70 },
+      { label: 'CPN', pct: 63 },
       { label: 'Done', pct: 100 }
     ].forEach(function(m) {
       headerTrack.appendChild(el('div', { className: 'lane-milestone-label', style: 'left:' + m.pct + '%' }, m.label));
@@ -1122,7 +1138,7 @@
       // Track with fill and milestone lines
       var track = el('div', { className: 'lane-track' });
       track.appendChild(el('div', { className: 'lane-fill', style: 'width:' + Math.max(pct, 1.5) + '%;background:' + safeColor(member.color) }));
-      [70, 100].forEach(function(m) { // CPN=19/27=70%
+      [63, 100].forEach(function(m) { // CPN=27/43=63%
         track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
       });
       row.appendChild(track);
