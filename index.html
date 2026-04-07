@@ -1267,6 +1267,12 @@
       container.appendChild(el('div', { style: 'text-align:center;padding:32px;color:var(--muted);font-size:14px;' }, 'No one has joined yet. Click + to claim your spot.'));
     }
 
+    // Milestone celebrations (course completions in last 7 days)
+    renderCelebrations(container);
+
+    // Streak leaderboard (top 5 by consistency)
+    renderStreakBoard(container);
+
     // Recent activity feed
     renderActivityFeed(container);
 
@@ -1275,6 +1281,75 @@
 
     // Team heatmap
     container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
+  }
+
+  function renderCelebrations(container) {
+    var now = new Date();
+    var weekAgo = new Date(now - 7 * 86400000);
+    var shoutouts = [];
+
+    CURRICULUM.forEach(function(course) {
+      state.members.forEach(function(m) {
+        var allDone = course.items.every(function(i) { return isItemDone(m.id, i.key); });
+        if (!allDone) return;
+        // Check if completion was in last 7 days
+        var latest = null;
+        course.items.forEach(function(i) {
+          var p = state.progress.find(function(pr) { return pr.member_id === m.id && pr.item_key === i.key && pr.completed; });
+          if (p && p.completed_at) {
+            var d = new Date(p.completed_at);
+            if (!latest || d > latest) latest = d;
+          }
+        });
+        if (latest && latest >= weekAgo) {
+          shoutouts.push({ name: m.name, course: course.course, date: latest, color: m.color });
+        }
+      });
+    });
+
+    if (shoutouts.length === 0) return;
+
+    shoutouts.sort(function(a, b) { return b.date - a.date; });
+
+    var section = el('div', { style: 'margin-bottom:28px;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:20px;' });
+    section.appendChild(el('div', { className: 'section-label', style: 'margin-bottom:12px;' }, 'This Week'));
+
+    shoutouts.forEach(function(s) {
+      var row = el('div', { style: 'display:flex;align-items:center;gap:10px;padding:6px 0;' }, [
+        el('div', { className: 'lane-avatar', style: 'background:' + safeColor(s.color) + ';width:24px;height:24px;font-size:11px;border-radius:6px;' }, s.name.charAt(0).toUpperCase()),
+        el('span', { style: 'font-size:14px;font-weight:500;' }, s.name + ' completed ' + s.course)
+      ]);
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  }
+
+  function renderStreakBoard(container) {
+    // Get top 5 members by streak, excluding 0-day streaks
+    var streaks = state.members.map(function(m) {
+      return { name: m.name, streak: getStreak(m.id), color: m.color };
+    }).filter(function(s) { return s.streak > 0; })
+      .sort(function(a, b) { return b.streak - a.streak; })
+      .slice(0, 5);
+
+    if (streaks.length === 0) return;
+
+    var section = el('div', { style: 'margin-bottom:28px;' });
+    section.appendChild(el('div', { className: 'section-label' }, 'Consistency'));
+
+    var board = el('div', { style: 'display:flex;gap:16px;flex-wrap:wrap;' });
+    streaks.forEach(function(s, idx) {
+      var badge = el('div', { style: 'display:flex;align-items:center;gap:6px;font-size:13px;' }, [
+        el('div', { className: 'lane-avatar', style: 'background:' + safeColor(s.color) + ';width:20px;height:20px;font-size:10px;border-radius:5px;' }, s.name.charAt(0).toUpperCase()),
+        el('span', { style: 'font-weight:600;' }, s.name),
+        el('span', { style: 'color:var(--accent);font-weight:700;' }, s.streak + 'd')
+      ]);
+      board.appendChild(badge);
+    });
+    section.appendChild(board);
+
+    container.appendChild(section);
   }
 
   function renderActivityFeed(container) {
