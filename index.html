@@ -758,7 +758,7 @@
     </div>
   </div>
 
-  <div class="cta-section">
+  <div class="cta-section" id="cta-section">
     <a href="https://www.anthropic.com/learn" class="cta-btn" target="_blank">Start the Free Courses</a>
     <p class="cta-sub">Then hit Claim Your Spot at the top of the page.</p>
   </div>
@@ -2052,13 +2052,15 @@
   function updateLayout() {
     var landing = document.getElementById('landing');
     var workspace = document.getElementById('workspace');
+    var ctaSection = document.getElementById('cta-section');
     if (authUser && state.myMemberId) {
-      // Signed in: move landing details after workspace
+      // Signed in: move landing details after workspace, hide CTA
       if (workspace.nextElementSibling !== landing) {
         workspace.parentNode.insertBefore(workspace, landing);
       }
       workspace.querySelector('.container').style.borderTop = 'none';
       workspace.style.paddingTop = '0';
+      if (ctaSection) ctaSection.style.display = 'none';
     } else {
       // Not signed in: landing before workspace (default HTML order)
       var pageHeader = document.getElementById('page-header');
@@ -2067,6 +2069,7 @@
       }
       workspace.querySelector('.container').style.borderTop = '';
       workspace.style.paddingTop = '';
+      if (ctaSection) ctaSection.style.display = '';
     }
   }
 
