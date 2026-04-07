@@ -647,7 +647,7 @@
         <div class="step-num">2</div>
         <div class="step-content">
           <strong>Follow the roadmap in your hub</strong>
-          <p>Your hub has a step-by-step roadmap: courses to take, boxes to check, exam prep links. Everything you need in one place.</p>
+          <p>Your hub has a step-by-step roadmap with links to every course. As you finish each section, come back here and check it off. Your progress is tracked manually -- you log what you've completed so the cohort can see each other moving.</p>
         </div>
       </div>
       <div class="step">
@@ -1535,6 +1535,7 @@
 
     var section = el('div', { className: 'roadmap' });
     section.appendChild(el('div', { className: 'section-label' }, 'Roadmap'));
+    section.appendChild(el('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:12px;' }, 'Complete each course at the link, then check it off below to log your progress.'));
 
     phases.forEach(function(phase) {
       // Phase header
@@ -1660,6 +1661,9 @@
 
     // Curriculum -- CPN Learning Path
     container.appendChild(el('div', { className: 'section-label', style: 'margin-top:28px;' }, 'CPN Learning Path'));
+    if (isOwner) {
+      container.appendChild(el('div', { style: 'font-size:12px;color:var(--muted);margin-bottom:12px;' }, 'Click each course link to open it. When you finish a section, check the box to log it.'));
+    }
     CPN_COURSES.forEach(function(course) {
       renderCourseBlock(container, course, memberId, isOwner);
     });
