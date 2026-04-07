@@ -856,10 +856,10 @@
       { key: 'mcp_client', label: 'MCP client implementation and advanced features' }
     ]},
     { course: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', items: [
-      { key: 'cca_start', label: 'Getting Started' },
-      { key: 'cca_codegen', label: 'Code Generation' },
-      { key: 'cca_debug', label: 'Debugging with Claude' },
-      { key: 'cca_advanced', label: 'Advanced Patterns' }
+      { key: 'cca_what', label: 'What is Claude Code? (3 lessons)' },
+      { key: 'cca_hands_on', label: 'Getting hands on (9 lessons)' },
+      { key: 'cca_hooks', label: 'Hooks and the SDK (7 lessons)' },
+      { key: 'cca_wrap', label: 'Wrapping up (2 lessons)' }
     ]}
   ];
 
@@ -871,7 +871,7 @@
       { key: 'cowork_customize', label: 'Making Claude Cowork yours' },
       { key: 'cowork_practice', label: 'Claude Cowork in practice' },
       { key: 'cowork_responsible', label: 'Working responsibly' },
-      { key: 'cowork_quiz', label: 'Quiz' }
+      { key: 'cowork_quiz', label: 'Check your understanding (Quiz)' }
     ]},
     { course: 'AI Fluency: Framework and Foundations', url: 'https://anthropic.skilljar.com/ai-fluency-framework-foundations', items: [
       { key: 'aif_fundamentals', label: 'AI Fundamentals and Framework' },
@@ -1118,7 +1118,7 @@
       // Track with fill and milestone lines
       var track = el('div', { className: 'lane-track' });
       track.appendChild(el('div', { className: 'lane-fill', style: 'width:' + Math.max(pct, 1.5) + '%;background:' + safeColor(member.color) }));
-      [70, 100].forEach(function(m) {
+      [70, 100].forEach(function(m) { // CPN=19/27=70%
         track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
       });
       row.appendChild(track);
