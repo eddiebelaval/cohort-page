@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cohort Playbook -- Eddie's Ops Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111111;
+    --paper: #ffffff;
+    --accent: #d4622b;
+    --muted: #777777;
+    --card-bg: #f8f8f8;
+    --border: #e5e5e5;
+    --green: #22c55e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 48px 28px 80px;
+  }
+
+  .private-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 24px;
+  }
+  .private-badge::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px; letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 15px; color: var(--muted); margin-bottom: 40px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; letter-spacing: -0.5px;
+    margin-bottom: 16px; margin-top: 48px;
+    padding-top: 32px; border-top: 1px solid var(--border);
+  }
+  h2:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+
+  h3 {
+    font-size: 14px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--accent);
+    margin-bottom: 8px; margin-top: 28px;
+  }
+
+  p { margin-bottom: 12px; font-size: 14px; }
+
+  .template {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    margin: 12px 0 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-line;
+    color: var(--ink);
+  }
+
+  .template .placeholder {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .copy-btn {
+    display: inline-block; margin-top: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); background: none; border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 4px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+  .tip {
+    font-size: 12px; color: var(--muted); font-style: italic;
+    margin-top: 4px;
+  }
+
+  .moment-table {
+    width: 100%; border-collapse: collapse; margin: 16px 0;
+    font-size: 13px;
+  }
+  .moment-table th {
+    text-align: left; font-size: 10px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); padding: 8px 0; border-bottom: 2px solid var(--border);
+  }
+  .moment-table td {
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .moment-table td:first-child { font-weight: 600; padding-right: 20px; white-space: nowrap; }
+
+  .data-list {
+    list-style: none; margin: 12px 0;
+  }
+  .data-list li {
+    padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between;
+  }
+  .data-list li:last-child { border-bottom: none; }
+  .data-label { font-weight: 600; }
+  .data-source { color: var(--muted); font-size: 12px; }
+
+  .nav-link {
+    display: inline-block; margin-top: 40px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    text-decoration: none;
+  }
+  .nav-link:hover { text-decoration: underline; }
+
+  @media (max-width: 520px) {
+    .container { padding: 32px 18px 48px; }
+    h1 { font-size: 28px; }
+    .template { padding: 16px; font-size: 12px; }
+    .moment-table td:first-child { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="private-badge">Eddie's Eyes Only</div>
+
+  <h1>Cohort Playbook</h1>
+  <p class="subtitle">Your ops guide for running the Claude Certified Architect cohort. Templates, cadence, key moments. Reference the cohort page dashboard for live data.</p>
+
+  <h2>Weekly Rhythm</h2>
+
+  <h3>Monday -- Kickoff</h3>
+  <p>Post a weekly pulse in the WhatsApp group. Pull numbers from the dashboard.</p>
+  <div class="template" id="tpl-monday">Week <span class="placeholder">[N]</span> check-in
+
+<span class="placeholder">[X]</span> members in the cohort
+<span class="placeholder">[Y]</span> active this week
+Top streaks: <span class="placeholder">[names from Consistency section]</span>
+
+This week's focus: <span class="placeholder">[CPN course / cert prep / exam prep]</span>
+
+Who's working on what? Drop a quick update.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-monday', this)">Copy</button>
+  <p class="tip">Check the stat bar + consistency section on the dashboard for numbers.</p>
+
+  <h3>Wednesday -- Nudge</h3>
+  <p>Short mid-week energy. Tag anyone who completed something.</p>
+  <div class="template" id="tpl-wednesday">Mid-week update
+
+<span class="placeholder">[Name]</span> just completed <span class="placeholder">[Course]</span> -- nice work.
+
+Who else is making moves this week? Even 15 minutes counts.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-wednesday', this)">Copy</button>
+  <p class="tip">Check the "This Week" celebrations section on the dashboard.</p>
+
+  <h3>Friday -- Recap</h3>
+  <p>End of week. Share progress. Build anticipation.</p>
+  <div class="template" id="tpl-friday">Week <span class="placeholder">[N]</span> recap
+
+Completions this week: <span class="placeholder">[list from celebrations]</span>
+Team streak: <span class="placeholder">[X]</span> days
+<span class="placeholder">[X]</span> of us on the CPN learning path
+
+Next week: <span class="placeholder">[what's coming]</span>
+
+Have a good weekend. See you Monday.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-friday', this)">Copy</button>
+
+  <h2>Daily Touchpoints</h2>
+  <p>Lightweight. 1-2 sentences. Not every day -- just when there's something to say.</p>
+
+  <div class="template" id="tpl-complete">@<span class="placeholder">[Name]</span> just finished <span class="placeholder">[Course]</span>. <span class="placeholder">[X]</span> down, <span class="placeholder">[Y]</span> to go.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-complete', this)">Copy</button>
+  <p class="tip">Course completion</p>
+
+  <div class="template" id="tpl-join">Welcome <span class="placeholder">[Name]</span> to the cohort. We're at <span class="placeholder">[X]</span> members now.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-join', this)">Copy</button>
+  <p class="tip">New member joins</p>
+
+  <div class="template" id="tpl-streak"><span class="placeholder">[Name]</span> hit a <span class="placeholder">[X]</span>-day streak. Consistency wins.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-streak', this)">Copy</button>
+  <p class="tip">Streak milestone</p>
+
+  <h2>Intro Round</h2>
+  <p>Do this once. Sets the tone for the group.</p>
+
+  <div class="template" id="tpl-intro">Quick intros -- drop your name, what you do, and why you joined.
+
+I'll start: I'm Eddie, founder of id8Labs. I build AI products with Claude. I started this cohort because I want the people I know to get certified before everyone else catches on. This credential is going to age well.
+
+Your turn.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-intro', this)">Copy</button>
+
+  <h2>Monthly Scoreboard</h2>
+  <p>Post at the end of each month. Big picture accountability.</p>
+
+  <div class="template" id="tpl-monthly"><span class="placeholder">[Month]</span> recap
+
+Members: <span class="placeholder">[X]</span>
+CPN courses completed: <span class="placeholder">[X]</span> of <span class="placeholder">[target]</span>
+Cert prep courses completed: <span class="placeholder">[X]</span>
+Highest readiness score: <span class="placeholder">[Name]</span> at <span class="placeholder">[score]</span>
+Longest streak: <span class="placeholder">[Name]</span> at <span class="placeholder">[X]</span> days
+
+We're <span class="placeholder">[on track / behind / ahead]</span> for the late June exam target.</div>
+  <button class="copy-btn" onclick="copyTemplate('tpl-monthly', this)">Copy</button>
+
+  <h2>Key Moments</h2>
+  <p>One-time posts for milestone events. Copy and customize when the moment hits.</p>
+
+  <table class="moment-table">
+    <tr><th>Event</th><th>What to Post</th></tr>
+    <tr><td>CPN gate hit</td><td>"We hit the CPN gate. Submitting the form to Anthropic today."</td></tr>
+    <tr><td>CPN admitted</td><td>"We're in. Partner Portal access unlocked. Certification enrollment open."</td></tr>
+    <tr><td>First 80+ readiness</td><td>"[Name] is exam-ready. Who's next?"</td></tr>
+    <tr><td>2 weeks to exam</td><td>"Two weeks out. If you haven't started practice questions, now's the time."</td></tr>
+    <tr><td>Exam day</td><td>"Today's the day. Good luck everyone. Report back when you pass."</td></tr>
+    <tr><td>First certified</td><td>"[Name] is Claude Certified. The first of many."</td></tr>
+  </table>
+
+  <h2>Dashboard Reference</h2>
+  <p>What to pull from <a href="https://cohort-page.vercel.app" target="_blank" style="color:var(--accent);">cohort-page.vercel.app</a> for your posts.</p>
+
+  <ul class="data-list">
+    <li><span class="data-label">Member count</span><span class="data-source">Stat bar</span></li>
+    <li><span class="data-label">Team streak</span><span class="data-source">Stat bar</span></li>
+    <li><span class="data-label">This week's completions</span><span class="data-source">This Week section</span></li>
+    <li><span class="data-label">Top streaks</span><span class="data-source">Consistency section</span></li>
+    <li><span class="data-label">Individual progress</span><span class="data-source">Lane chart (X/24)</span></li>
+    <li><span class="data-label">Readiness scores</span><span class="data-source">Lane chart numbers</span></li>
+    <li><span class="data-label">Recent activity</span><span class="data-source">Activity feed</span></li>
+  </ul>
+
+  <a href="https://cohort-page.vercel.app" class="nav-link" target="_blank">Open Cohort Dashboard</a>
+
+</div>
+
+<script>
+function copyTemplate(id, btn) {
+  var tpl = document.getElementById(id);
+  var text = tpl.innerText;
+  navigator.clipboard.writeText(text).then(function() {
+    btn.textContent = 'Copied';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
+</body>
+</html>
