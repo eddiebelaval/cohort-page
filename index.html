@@ -777,22 +777,25 @@
   // CPN Learning Path courses (the gate to Partner Network)
   var CPN_COURSES = [
     { course: 'Introduction to Agent Skills', url: 'https://anthropic.skilljar.com/introduction-to-agent-skills', items: [
-      { key: 'ias_building', label: 'Building Skills' },
-      { key: 'ias_configuring', label: 'Configuration and Triggers' },
-      { key: 'ias_sharing', label: 'Sharing and Distribution' },
-      { key: 'ias_advanced', label: 'Subagents and Troubleshooting' }
+      { key: 'ias_what', label: 'What are skills?' },
+      { key: 'ias_creating', label: 'Creating your first skill' },
+      { key: 'ias_config', label: 'Configuration and multi-file skills' },
+      { key: 'ias_vs', label: 'Skills vs. other Claude Code features' },
+      { key: 'ias_sharing', label: 'Sharing skills' },
+      { key: 'ias_troubleshooting', label: 'Troubleshooting skills' }
     ]},
     { course: 'Building with the Claude API', url: 'https://anthropic.skilljar.com/claude-with-the-anthropic-api', items: [
-      { key: 'api_setup', label: 'Setup and Authentication' },
-      { key: 'api_prompts', label: 'Prompts and Conversations' },
-      { key: 'api_tools', label: 'Tool Use and RAG' },
-      { key: 'api_advanced', label: 'Agents and Deployment' }
+      { key: 'api_getting_started', label: 'Getting started with Claude' },
+      { key: 'api_prompt_eng', label: 'Prompt engineering and evaluation' },
+      { key: 'api_tool_use', label: 'Tool use with Claude' },
+      { key: 'api_rag', label: 'Retrieval augmented generation' },
+      { key: 'api_mcp', label: 'Model Context Protocol (MCP)' },
+      { key: 'api_code_computer', label: 'Claude Code and Computer Use' },
+      { key: 'api_agents', label: 'Agents and workflows' }
     ]},
     { course: 'Introduction to MCP', url: 'https://anthropic.skilljar.com/introduction-to-model-context-protocol', items: [
-      { key: 'mcp_architecture', label: 'Architecture and Design' },
-      { key: 'mcp_servers', label: 'Building Servers' },
-      { key: 'mcp_resources', label: 'Resources and Prompts' },
-      { key: 'mcp_integration', label: 'Integration Patterns' }
+      { key: 'mcp_fundamentals', label: 'MCP fundamentals and server development' },
+      { key: 'mcp_client', label: 'MCP client implementation and advanced features' }
     ]},
     { course: 'Claude Code in Action', url: 'https://anthropic.skilljar.com/claude-code-in-action', items: [
       { key: 'cca_start', label: 'Getting Started' },
@@ -804,17 +807,17 @@
 
   // Cert Prep courses (for the Claude Certified Architect exam)
   var CERT_COURSES = [
-    { course: 'Claude 101', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
-      { key: 'c101_intro', label: 'Introduction to Claude' },
-      { key: 'c101_prompts', label: 'Prompt Engineering Basics' },
-      { key: 'c101_tools', label: 'Working with Tools' },
-      { key: 'c101_best', label: 'Best Practices' }
+    { course: 'Introduction to Claude Cowork', url: 'https://anthropic.skilljar.com/introduction-to-claude-cowork', items: [
+      { key: 'cowork_meet', label: 'Meet Claude Cowork' },
+      { key: 'cowork_first_task', label: 'Running your first task' },
+      { key: 'cowork_customize', label: 'Making Claude Cowork yours' },
+      { key: 'cowork_practice', label: 'Claude Cowork in practice' },
+      { key: 'cowork_responsible', label: 'Working responsibly' },
+      { key: 'cowork_quiz', label: 'Quiz' }
     ]},
-    { course: 'AI Fluency Foundations', url: 'https://claudecertifications.com/courses/ai-fluency-foundations', items: [
-      { key: 'aif_fundamentals', label: 'AI Fundamentals' },
-      { key: 'aif_agentic', label: 'Agentic Systems' },
-      { key: 'aif_architecture', label: 'Architecture Patterns' },
-      { key: 'aif_exam', label: 'Exam Prep' }
+    { course: 'AI Fluency: Framework and Foundations', url: 'https://anthropic.skilljar.com/ai-fluency-framework-foundations', items: [
+      { key: 'aif_fundamentals', label: 'AI Fundamentals and Framework' },
+      { key: 'aif_practical', label: 'Practical AI Skills' }
     ]}
   ];
 
@@ -1018,7 +1021,7 @@
     var header = el('div', { className: 'lane-header' });
     var headerTrack = el('div', { className: 'lane-header-track' });
     [
-      { label: 'CPN', pct: 67 },
+      { label: 'CPN', pct: 70 },
       { label: 'Done', pct: 100 }
     ].forEach(function(m) {
       headerTrack.appendChild(el('div', { className: 'lane-milestone-label', style: 'left:' + m.pct + '%' }, m.label));
@@ -1057,7 +1060,7 @@
       // Track with fill and milestone lines
       var track = el('div', { className: 'lane-track' });
       track.appendChild(el('div', { className: 'lane-fill', style: 'width:' + Math.max(pct, 1.5) + '%;background:' + safeColor(member.color) }));
-      [67, 100].forEach(function(m) {
+      [70, 100].forEach(function(m) {
         track.appendChild(el('div', { className: 'lane-milestone-line', style: 'left:' + m + '%' }));
       });
       row.appendChild(track);
