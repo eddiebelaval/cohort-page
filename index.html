@@ -566,6 +566,24 @@
   .notes-readonly { padding: 16px 0; font-size: 14px; line-height: 1.7; color: #555; min-height: 40px; white-space: pre-wrap; }
   .notes-empty { color: var(--muted); font-style: italic; }
 
+  /* Changelog + Requests */
+  .page-footer { padding: 48px 0 80px; border-top: 1px solid var(--border); margin-top: 40px; }
+  .changelog { margin-bottom: 36px; }
+  .changelog-entry {
+    display: flex; gap: 12px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .changelog-entry:last-child { border-bottom: none; }
+  .changelog-date { color: var(--muted); font-size: 11px; white-space: nowrap; min-width: 60px; }
+  .changelog-text { color: var(--ink); }
+  .request-btn {
+    display: inline-block; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 600; color: var(--ink);
+    text-decoration: none; border: 1px solid var(--border);
+    padding: 10px 24px; border-radius: 6px; transition: all 0.2s;
+  }
+  .request-btn:hover { border-color: var(--accent); color: var(--accent); }
+
   @media (max-width: 520px) {
     .container { padding: 32px 18px 48px; }
     .slots-grid { gap: 6px; }
@@ -758,6 +776,42 @@
   <div class="container">
     <div class="tab-bar" id="tab-bar"></div>
     <div id="workspace-content"></div>
+  </div>
+</div>
+
+<div class="container page-footer">
+  <details class="changelog">
+    <summary class="section-label" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">Changelog <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;">&#9660;</span></summary>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 6</span>
+      <span class="changelog-text">Curriculum updated to match Skilljar courses exactly. Course names, sections, and URLs now match 100%.</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 6</span>
+      <span class="changelog-text">Full A-to-Z roadmap added. 6 phases from CPN Learning Path through certification exam.</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 6</span>
+      <span class="changelog-text">Magic link email sign-in. No more name-only signups. Your progress follows you across devices.</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 5</span>
+      <span class="changelog-text">Swimming lane progress chart, readiness scores, shared bookmarks, and milestone celebrations added.</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 5</span>
+      <span class="changelog-text">Cohort cap removed. Page now accepts unlimited signups (was limited to 10).</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 5</span>
+      <span class="changelog-text">Cohort page launched.</span>
+    </div>
+  </details>
+
+  <div>
+    <div class="section-label">Feedback</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Something broken? Have an idea? Let Eddie know.</p>
+    <a href="https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX" target="_blank" class="request-btn">Send Feedback in WhatsApp</a>
   </div>
 </div>
 
