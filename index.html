@@ -475,7 +475,12 @@
   .heatmap-cell:hover .heatmap-tooltip { display: block; }
   .heatmap-day-labels { display: flex; flex-direction: column; gap: 3px; margin-right: 4px; }
   .heatmap-day-label { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; }
-  .heatmap-wrapper { display: flex; overflow-x: auto; }
+  .heatmap-wrapper { display: inline-flex; flex-direction: column; gap: 4px; }
+  .heatmap-day-header { display: flex; gap: 3px; margin-left: 42px; }
+  .heatmap-day-header span { width: 22px; text-align: center; font-size: 9px; color: var(--muted); font-weight: 500; }
+  .heatmap-body { display: flex; gap: 4px; }
+  .heatmap-week-labels { display: flex; flex-direction: column; gap: 3px; margin-right: 2px; }
+  .heatmap-week-label { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; white-space: nowrap; }
 
   /* Pro Tip */
   .tip-section { margin-bottom: 36px; background: var(--card-bg); border-radius: 10px; padding: 24px; border: 1px solid var(--border); }
@@ -653,7 +658,8 @@
     .tab { padding: 8px 14px 10px; font-size: 12px; }
     .member-row { flex-wrap: wrap; }
     .member-streak { order: 3; width: 100%; margin-top: 4px; }
-    .heatmap-grid { overflow-x: auto; }
+    .heatmap-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .heatmap-week-label { font-size: 8px; }
     .cert-details { gap: 16px; }
     .cert-detail { font-size: 12px; }
     .tip-section { padding: 18px; }
@@ -902,6 +908,10 @@
 <div class="container page-footer">
   <details class="changelog">
     <summary class="section-label" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">Changelog <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;">&#9660;</span></summary>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 7</span>
+      <span class="changelog-text">design: full frontend polish pass + Claude design language</span>
+    </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 7</span>
       <span class="changelog-text">feat: community heatmap + Pro Tip of the Day</span>
@@ -1339,8 +1349,13 @@
   }
 
   function getHeatmapData(memberId) {
-    var cells = [], days = 28, start = new Date();
-    start.setDate(start.getDate() - (days - 1));
+    var cells = [], weeks = 4, start = new Date();
+    // Align start to a Monday (go back to 4 Mondays ago)
+    start.setDate(start.getDate() - (weeks * 7 - 1));
+    var dayOfWeek = start.getDay(); // 0=Sun
+    var offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    start.setDate(start.getDate() + offset);
+    var days = Math.ceil((new Date() - start) / 86400000) + 1;
     for (var i = 0; i < days; i++) {
       var d = new Date(start); d.setDate(d.getDate() + i);
       var key = toDateKey(d);
@@ -1481,11 +1496,38 @@
       el('div', { className: 'heatmap-label' }, label)
     ]);
     var wrapper = el('div', { className: 'heatmap-wrapper' });
+
+    // Day header row (M T W T F S S)
+    var dayHeader = el('div', { className: 'heatmap-day-header' });
+    ['M','T','W','T','F','S','S'].forEach(function(d) {
+      dayHeader.appendChild(el('span', {}, d));
+    });
+    wrapper.appendChild(dayHeader);
+
+    // Build weeks
+    var body = el('div', { className: 'heatmap-body' });
+
+    // Week labels column
+    var weekLabels = el('div', { className: 'heatmap-week-labels' });
+    var numWeeks = Math.ceil(cells.length / 7);
+    for (var w = 0; w < numWeeks; w++) {
+      var weekStart = new Date(cells[w * 7].date + 'T00:00:00');
+      var lbl = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      weekLabels.appendChild(el('div', { className: 'heatmap-week-label' }, lbl));
+    }
+    body.appendChild(weekLabels);
+
+    // Grid of cells
     var grid = el('div', { className: 'heatmap-grid' });
     cells.forEach(function(cell) {
       var cellEl = el('div', { className: 'heatmap-cell' });
       var members = cell.members || [];
-      if (members.length > 0) {
+      // Future dates: style differently
+      var cellDate = new Date(cell.date + 'T00:00:00');
+      var today = new Date(); today.setHours(0,0,0,0);
+      if (cellDate > today) {
+        cellEl.style.opacity = '0.3';
+      } else if (members.length > 0) {
         cellEl.style.background = '#2a2a2a';
         cellEl.style.padding = '2px';
         var maxDots = 9;
@@ -1508,7 +1550,9 @@
       var d = new Date(cell.date + 'T00:00:00');
       var dayName = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       var tooltipText = dayName + '\n';
-      if (members.length === 0) {
+      if (cellDate > today) {
+        tooltipText += 'Upcoming';
+      } else if (members.length === 0) {
         tooltipText += 'No activity';
       } else {
         tooltipText += members.length + ' active: ' + members.map(function(m) { return m.name; }).join(', ');
@@ -1517,7 +1561,8 @@
       cellEl.appendChild(tooltip);
       grid.appendChild(cellEl);
     });
-    wrapper.appendChild(grid);
+    body.appendChild(grid);
+    wrapper.appendChild(body);
     section.appendChild(wrapper);
     return section;
   }
