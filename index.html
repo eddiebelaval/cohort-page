@@ -441,15 +441,31 @@
   .stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; letter-spacing: -1.5px; margin-bottom: 4px; color: var(--ink); }
   .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
 
-  /* Heatmap: tighter, more subtle */
+  /* Heatmap: community mosaic */
   .heatmap-section { margin-bottom: 32px; }
   .heatmap-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 2px; max-width: calc(7 * 12px + 6 * 2px); }
-  .heatmap-cell { width: 12px; height: 12px; border-radius: 2px; background: var(--streak-0); }
-  .heatmap-cell.l1 { background: var(--streak-1); }
-  .heatmap-cell.l2 { background: var(--streak-2); }
-  .heatmap-cell.l3 { background: var(--streak-3); }
-  .heatmap-cell.l4 { background: var(--streak-4); }
+  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 3px; max-width: calc(7 * 22px + 6 * 3px); }
+  .heatmap-cell { width: 22px; height: 22px; border-radius: 3px; background: var(--streak-0); position: relative; cursor: default; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 2px; gap: 1px; overflow: hidden; }
+  .heatmap-dot { border-radius: 50%; flex-shrink: 0; }
+  .heatmap-cell .heatmap-overflow { font-size: 7px; color: #fff; font-weight: 700; position: absolute; bottom: 1px; right: 2px; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
+  .heatmap-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); font-size: 11px; padding: 6px 10px; border-radius: 4px; white-space: nowrap; z-index: 10; margin-bottom: 4px; pointer-events: none; max-width: 200px; white-space: normal; line-height: 1.4; }
+  .heatmap-cell:hover .heatmap-tooltip { display: block; }
+  .heatmap-day-labels { display: flex; flex-direction: column; gap: 3px; margin-right: 4px; }
+  .heatmap-day-label { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; }
+  .heatmap-wrapper { display: flex; }
+
+  /* Pro Tip */
+  .tip-section { margin-bottom: 32px; background: var(--card-bg); border-radius: 8px; padding: 20px; border: 1px solid var(--border); }
+  .tip-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .tip-badge { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .tip-day { font-size: 11px; color: var(--muted); }
+  .tip-text { font-size: 14px; line-height: 1.6; color: var(--ink); }
+  .tip-source { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  .tip-log { margin-top: 12px; }
+  .tip-log summary { font-size: 11px; font-weight: 600; color: var(--muted); cursor: pointer; letter-spacing: 1px; text-transform: uppercase; }
+  .tip-log-entry { padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
+  .tip-log-entry:last-child { border-bottom: none; }
+  .tip-log-date { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
 
   /* Member List: borderless rows, hairline separators */
   .member-list { margin-bottom: 32px; }
@@ -971,6 +987,40 @@
   // Combined curriculum (all courses, used for checklists and progress tracking)
   var CURRICULUM = CPN_COURSES.concat(CERT_COURSES);
 
+  // Pro Tips -- sourced from course material
+  var PRO_TIPS = [
+    { tip: 'Claude works best when you give it a role, context, and a specific task. "You are a senior engineer reviewing this PR for security issues" beats "review this code."', source: 'Introduction to Agent Skills' },
+    { tip: 'System prompts set the baseline behavior. User messages steer each turn. Keep your system prompt stable and let the conversation do the steering.', source: 'Building with the Claude API' },
+    { tip: 'MCP (Model Context Protocol) lets Claude connect to external tools and data sources. Think of it as USB-C for AI: one standard interface for everything.', source: 'Introduction to MCP' },
+    { tip: 'Claude Code can read, write, and run your code. But it works best when you describe the outcome you want, not the steps to get there.', source: 'Claude Code in Action' },
+    { tip: 'Temperature controls randomness. Use 0 for deterministic tasks (code, math). Use 0.7+ for creative tasks (writing, brainstorming).', source: 'Building with the Claude API' },
+    { tip: 'Agentic architecture means Claude decides what tools to use and when. You define the tools. Claude picks the right one for each step.', source: 'Introduction to Agent Skills' },
+    { tip: 'Always validate tool outputs before passing them back to the user. The tool might succeed but return unexpected data.', source: 'Introduction to Agent Skills' },
+    { tip: 'Streaming responses improve perceived latency. Start showing output before the full response is ready.', source: 'Building with the Claude API' },
+    { tip: 'MCP servers can expose resources (data), tools (actions), and prompts (templates). Most people start with tools, but resources are often more useful.', source: 'Introduction to MCP' },
+    { tip: 'Claude Code hooks let you run shell commands before or after tool calls. Use them for linting, testing, or auto-formatting.', source: 'Claude Code in Action' },
+    { tip: 'Multi-turn conversations cost more tokens. For independent tasks, start fresh rather than appending to a long thread.', source: 'Building with the Claude API' },
+    { tip: 'The best agent architectures fail gracefully. Plan for what happens when a tool call fails, not just when it succeeds.', source: 'Introduction to Agent Skills' },
+    { tip: 'When building MCP servers, keep tools atomic. One tool should do one thing well. Let the agent compose them.', source: 'Introduction to MCP' },
+    { tip: 'Claude Code can create git commits, run tests, and deploy code. But always review the diff before letting it push.', source: 'Claude Code in Action' },
+    { tip: 'Prompt caching reuses the prefix of your prompt across calls. Put stable content (system prompt, examples) at the start for big cost savings.', source: 'Building with the Claude API' },
+    { tip: 'Tool descriptions are prompts too. Claude reads them to decide when to use each tool. Write them like you are explaining to a smart colleague.', source: 'Introduction to Agent Skills' },
+    { tip: 'AI Fluency starts with understanding what AI can and cannot do. The exam tests judgment, not just knowledge.', source: 'AI Fluency: Framework and Foundations' },
+    { tip: 'Claude Cowork is pair programming with AI. It works best when you think out loud and let Claude fill in the implementation details.', source: 'Introduction to Claude Cowork' },
+    { tip: 'The certification exam is scenario-based. You will not be asked to define terms. You will be asked to make architectural decisions.', source: 'AI Fluency: Framework and Foundations' },
+    { tip: 'Context windows are finite. The most important context goes at the start and end of the prompt. The middle gets less attention.', source: 'Building with the Claude API' },
+    { tip: 'Extended thinking gives Claude a scratchpad for complex reasoning. Use it for multi-step problems where the answer requires planning.', source: 'Building with the Claude API' },
+    { tip: 'When designing agent tools, return structured data (JSON), not natural language. Let the agent format the response for the user.', source: 'Introduction to Agent Skills' },
+    { tip: 'MCP transport can be stdio (local) or SSE (remote). Start with stdio for development, switch to SSE for production deployments.', source: 'Introduction to MCP' },
+    { tip: 'Claude Code respects CLAUDE.md files. Put project conventions there and Claude will follow them automatically.', source: 'Claude Code in Action' },
+    { tip: 'Batch processing with the Message Batches API gives you 50% off and 24-hour turnaround. Use it for non-urgent, high-volume tasks.', source: 'Building with the Claude API' },
+    { tip: 'The 5 exam domains: Agentic Architecture (25%), Tool Design/MCP (20%), Claude Code (20%), Prompt Engineering (20%), Context/Reliability (15%).', source: 'AI Fluency: Framework and Foundations' },
+    { tip: 'Vision inputs let Claude analyze images, screenshots, and diagrams. Use it for UI review, chart interpretation, or document processing.', source: 'Building with the Claude API' },
+    { tip: 'Agent loops should have explicit exit conditions. Without them, your agent will keep trying forever and burning tokens.', source: 'Introduction to Agent Skills' },
+    { tip: 'The best way to study for the cert: build something real with Claude, then reflect on the patterns you used. Experience beats memorization.', source: 'AI Fluency: Framework and Foundations' },
+    { tip: 'Subagents let you delegate subtasks to separate Claude instances. Each gets its own context window. Use them to avoid context pollution.', source: 'Introduction to Agent Skills' }
+  ];
+
   var ALL_ITEM_KEYS = [];
   CURRICULUM.forEach(function(c) { c.items.forEach(function(i) { ALL_ITEM_KEYS.push(i.key); }); });
 
@@ -1237,17 +1287,26 @@
   }
 
   function getHeatmapData(memberId) {
-    var cells = [], start = new Date();
-    start.setDate(start.getDate() - 55);
-    for (var i = 0; i < 56; i++) {
+    var cells = [], days = 28, start = new Date();
+    start.setDate(start.getDate() - (days - 1));
+    for (var i = 0; i < days; i++) {
       var d = new Date(start); d.setDate(d.getDate() + i);
-      var key = toDateKey(d), count;
+      var key = toDateKey(d);
+      var activeMembers = [];
       if (memberId) {
-        count = (state.activityByMember[memberId] && state.activityByMember[memberId][key]) ? 1 : 0;
+        if (state.activityByMember[memberId] && state.activityByMember[memberId][key]) {
+          var m = state.members.find(function(mm) { return mm.id === memberId; });
+          if (m) activeMembers.push({ name: m.name, color: m.color });
+        }
       } else {
-        count = state.activityByDate[key] ? Object.keys(state.activityByDate[key]).length : 0;
+        if (state.activityByDate[key]) {
+          Object.keys(state.activityByDate[key]).forEach(function(mid) {
+            var m = state.members.find(function(mm) { return mm.id === mid; });
+            if (m) activeMembers.push({ name: m.name, color: safeColor(m.color) });
+          });
+        }
       }
-      cells.push({ date: key, count: count });
+      cells.push({ date: key, members: activeMembers, day: d.getDay() });
     }
     return cells;
   }
@@ -1369,13 +1428,45 @@
     var section = el('div', { className: 'heatmap-section' }, [
       el('div', { className: 'heatmap-label' }, label)
     ]);
+    var wrapper = el('div', { className: 'heatmap-wrapper' });
     var grid = el('div', { className: 'heatmap-grid' });
     cells.forEach(function(cell) {
-      var level = isTeam ? streakLevel(cell.count, true) : (cell.count > 0 ? 'l3' : '');
-      var title = isTeam ? (cell.date + ': ' + cell.count + ' active') : cell.date;
-      grid.appendChild(el('div', { className: 'heatmap-cell ' + level, title: title }));
+      var cellEl = el('div', { className: 'heatmap-cell' });
+      var members = cell.members || [];
+      if (members.length > 0) {
+        cellEl.style.background = '#2a2a2a';
+        cellEl.style.padding = '2px';
+        var maxDots = 9;
+        var dotSize = members.length <= 4 ? 7 : (members.length <= 9 ? 5 : 4);
+        var shown = members.slice(0, maxDots);
+        shown.forEach(function(m) {
+          var dot = document.createElement('div');
+          dot.className = 'heatmap-dot';
+          dot.style.width = dotSize + 'px';
+          dot.style.height = dotSize + 'px';
+          dot.style.background = m.color;
+          cellEl.appendChild(dot);
+        });
+        if (members.length > maxDots) {
+          var overflow = el('span', { className: 'heatmap-overflow' }, '+' + (members.length - maxDots));
+          cellEl.appendChild(overflow);
+        }
+      }
+      // Tooltip
+      var d = new Date(cell.date + 'T00:00:00');
+      var dayName = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      var tooltipText = dayName + '\n';
+      if (members.length === 0) {
+        tooltipText += 'No activity';
+      } else {
+        tooltipText += members.length + ' active: ' + members.map(function(m) { return m.name; }).join(', ');
+      }
+      var tooltip = el('div', { className: 'heatmap-tooltip' }, tooltipText);
+      cellEl.appendChild(tooltip);
+      grid.appendChild(cellEl);
     });
-    section.appendChild(grid);
+    wrapper.appendChild(grid);
+    section.appendChild(wrapper);
     return section;
   }
 
@@ -1410,6 +1501,9 @@
     });
     container.appendChild(grid);
 
+    // Pro Tip of the Day
+    renderProTip(container);
+
     // Lane chart (the hero)
     if (state.members.length > 0) {
       renderLaneChart(container);
@@ -1430,7 +1524,7 @@
     renderBookmarksSection(container);
 
     // Team heatmap
-    container.appendChild(renderHeatmap(heatmap, 'Team Activity (8 Weeks)', true));
+    container.appendChild(renderHeatmap(heatmap, 'Team Activity (4 Weeks)', true));
   }
 
   function renderCelebrations(container) {
@@ -1472,6 +1566,49 @@
       section.appendChild(row);
     });
 
+    container.appendChild(section);
+  }
+
+  function getTipOfTheDay() {
+    // Deterministic tip based on date (day number since epoch)
+    var now = new Date();
+    var dayNum = Math.floor(now.getTime() / 86400000);
+    return dayNum % PRO_TIPS.length;
+  }
+
+  function renderProTip(container) {
+    var todayIdx = getTipOfTheDay();
+    var tip = PRO_TIPS[todayIdx];
+
+    var section = el('div', { className: 'tip-section' }, [
+      el('div', { className: 'tip-header' }, [
+        el('span', { className: 'tip-badge' }, 'Pro Tip of the Day'),
+        el('span', { className: 'tip-day' }, new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }))
+      ]),
+      el('div', { className: 'tip-text' }, tip.tip),
+      el('div', { className: 'tip-source' }, 'Source: ' + tip.source)
+    ]);
+
+    // Tip log (previous tips)
+    var log = document.createElement('details');
+    log.className = 'tip-log';
+    var summary = document.createElement('summary');
+    summary.textContent = 'Previous Tips';
+    log.appendChild(summary);
+
+    // Show last 7 days of tips
+    for (var i = 1; i <= 7; i++) {
+      var pastIdx = ((getTipOfTheDay() - i) % PRO_TIPS.length + PRO_TIPS.length) % PRO_TIPS.length;
+      var pastTip = PRO_TIPS[pastIdx];
+      var pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - i);
+      var entry = el('div', { className: 'tip-log-entry' }, [
+        el('div', { className: 'tip-log-date' }, pastDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' -- ' + pastTip.source),
+        document.createTextNode(pastTip.tip)
+      ]);
+      log.appendChild(entry);
+    }
+    section.appendChild(log);
     container.appendChild(section);
   }
 
@@ -1807,7 +1944,7 @@
     });
     container.appendChild(bluf);
 
-    container.appendChild(renderHeatmap(heatmap, 'Activity (8 Weeks)', false));
+    container.appendChild(renderHeatmap(heatmap, 'Activity (4 Weeks)', false));
 
     // Curriculum -- CPN Learning Path
     container.appendChild(el('div', { className: 'section-label', style: 'margin-top:28px;' }, 'CPN Learning Path'));
