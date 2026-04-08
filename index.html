@@ -2237,6 +2237,10 @@
   }
 
   function joinWithEmail(name, email) {
+    if (/\S+@\S+\.\S+/.test(name)) {
+      alert('That looks like an email address. Please enter your name instead.');
+      return;
+    }
     var color = AVATAR_COLORS[state.members.length % AVATAR_COLORS.length];
     // Insert member row first (with email, auth_id linked later)
     sb.from('members').insert({ name: name, email: email, color: color }).select().single()
