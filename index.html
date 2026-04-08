@@ -465,7 +465,7 @@
   /* Heatmap: community mosaic */
   .heatmap-section { margin-bottom: 36px; }
   .heatmap-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
-  .heatmap-grid { display: flex; flex-wrap: wrap; gap: 3px; max-width: calc(7 * 22px + 6 * 3px); }
+  .heatmap-grid { display: grid; grid-template-rows: repeat(7, 22px); grid-auto-flow: column; grid-auto-columns: 22px; gap: 3px; }
   .heatmap-cell { width: 22px; height: 22px; border-radius: 4px; background: var(--streak-0); position: relative; cursor: default; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 2px; gap: 1px; overflow: hidden; transition: transform 0.1s ease; }
   .heatmap-cell:hover { transform: scale(1.15); z-index: 2; }
   .heatmap-dot { border-radius: 50%; flex-shrink: 0; }
@@ -476,11 +476,11 @@
   .heatmap-day-labels { display: flex; flex-direction: column; gap: 3px; margin-right: 4px; }
   .heatmap-day-label { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; }
   .heatmap-wrapper { display: inline-flex; flex-direction: column; gap: 4px; }
-  .heatmap-day-header { display: flex; gap: 3px; margin-left: 42px; }
-  .heatmap-day-header span { width: 22px; text-align: center; font-size: 9px; color: var(--muted); font-weight: 500; }
+  .heatmap-month-header { display: flex; gap: 3px; margin-left: 20px; }
+  .heatmap-month-label { font-size: 9px; color: var(--muted); font-weight: 500; }
   .heatmap-body { display: flex; gap: 4px; }
-  .heatmap-week-labels { display: flex; flex-direction: column; gap: 3px; margin-right: 2px; }
-  .heatmap-week-label { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; white-space: nowrap; }
+  .heatmap-day-col { display: flex; flex-direction: column; gap: 3px; margin-right: 2px; }
+  .heatmap-day-label-y { height: 22px; font-size: 9px; color: var(--muted); display: flex; align-items: center; width: 14px; }
 
   /* Pro Tip */
   .tip-section { margin-bottom: 36px; background: var(--card-bg); border-radius: 10px; padding: 24px; border: 1px solid var(--border); }
@@ -1497,34 +1497,41 @@
     ]);
     var wrapper = el('div', { className: 'heatmap-wrapper' });
 
-    // Day header row (M T W T F S S)
-    var dayHeader = el('div', { className: 'heatmap-day-header' });
-    ['M','T','W','T','F','S','S'].forEach(function(d) {
-      dayHeader.appendChild(el('span', {}, d));
-    });
-    wrapper.appendChild(dayHeader);
-
-    // Build weeks
-    var body = el('div', { className: 'heatmap-body' });
-
-    // Week labels column
-    var weekLabels = el('div', { className: 'heatmap-week-labels' });
+    // Month labels along X axis (top)
     var numWeeks = Math.ceil(cells.length / 7);
+    var monthHeader = el('div', { className: 'heatmap-month-header' });
+    var lastMonth = '';
     for (var w = 0; w < numWeeks; w++) {
       var weekStart = new Date(cells[w * 7].date + 'T00:00:00');
-      var lbl = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      weekLabels.appendChild(el('div', { className: 'heatmap-week-label' }, lbl));
+      var month = weekStart.toLocaleDateString('en-US', { month: 'short' });
+      var lbl = el('div', { className: 'heatmap-month-label', style: 'width:' + (22 + 3) + 'px;' });
+      if (month !== lastMonth) {
+        lbl.textContent = month;
+        lastMonth = month;
+      }
+      monthHeader.appendChild(lbl);
     }
-    body.appendChild(weekLabels);
+    wrapper.appendChild(monthHeader);
 
-    // Grid of cells
+    // Body: day labels (Y) + grid
+    var body = el('div', { className: 'heatmap-body' });
+
+    // Day labels on Y axis (M T W T F S S)
+    var dayCol = el('div', { className: 'heatmap-day-col' });
+    ['M','T','W','T','F','S','S'].forEach(function(d, i) {
+      // Only show M, W, F labels (like GitHub)
+      var text = (i === 0 || i === 2 || i === 4) ? d : '';
+      dayCol.appendChild(el('div', { className: 'heatmap-day-label-y' }, text));
+    });
+    body.appendChild(dayCol);
+
+    // Grid: cells flow column-first (Mon-Sun top-to-bottom, then next week right)
     var grid = el('div', { className: 'heatmap-grid' });
+    var today = new Date(); today.setHours(0,0,0,0);
     cells.forEach(function(cell) {
       var cellEl = el('div', { className: 'heatmap-cell' });
       var members = cell.members || [];
-      // Future dates: style differently
       var cellDate = new Date(cell.date + 'T00:00:00');
-      var today = new Date(); today.setHours(0,0,0,0);
       if (cellDate > today) {
         cellEl.style.opacity = '0.3';
       } else if (members.length > 0) {
