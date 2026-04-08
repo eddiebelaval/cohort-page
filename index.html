@@ -466,7 +466,8 @@
   .heatmap-section { margin-bottom: 36px; }
   .heatmap-label { font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
   .heatmap-grid { display: grid; grid-template-rows: repeat(7, 22px); grid-auto-flow: column; grid-auto-columns: 22px; gap: 3px; }
-  .heatmap-cell { width: 22px; height: 22px; border-radius: 4px; background: var(--streak-0); position: relative; cursor: default; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 2px; gap: 1px; overflow: hidden; transition: transform 0.1s ease; }
+  .heatmap-cell { width: 22px; height: 22px; border-radius: 4px; background: var(--streak-0); position: relative; cursor: pointer; transition: transform 0.1s ease; }
+  .heatmap-cell-dots { width: 100%; height: 100%; display: flex; flex-wrap: wrap; align-content: flex-start; padding: 2px; gap: 1px; overflow: hidden; border-radius: 4px; }
   .heatmap-cell:hover { transform: scale(1.15); z-index: 2; }
   .heatmap-dot { border-radius: 50%; flex-shrink: 0; }
   .heatmap-cell .heatmap-overflow { font-size: 7px; color: #fff; font-weight: 700; position: absolute; bottom: 1px; right: 2px; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
@@ -1539,13 +1540,13 @@
     var today = new Date(); today.setHours(0,0,0,0);
     cells.forEach(function(cell) {
       var cellEl = el('div', { className: 'heatmap-cell' });
+      var dotsWrap = el('div', { className: 'heatmap-cell-dots' });
       var members = cell.members || [];
       var cellDate = new Date(cell.date + 'T00:00:00');
       if (cellDate > today) {
         cellEl.style.opacity = '0.3';
       } else if (members.length > 0) {
-        cellEl.style.background = '#14532d';
-        cellEl.style.padding = '2px';
+        dotsWrap.style.background = '#14532d';
         var maxDots = 9;
         var dotSize = members.length <= 4 ? 8 : (members.length <= 9 ? 6 : 4);
         var shown = members.slice(0, maxDots);
@@ -1555,13 +1556,14 @@
           dot.style.width = dotSize + 'px';
           dot.style.height = dotSize + 'px';
           dot.style.background = m.color;
-          cellEl.appendChild(dot);
+          dotsWrap.appendChild(dot);
         });
         if (members.length > maxDots) {
           var overflow = el('span', { className: 'heatmap-overflow' }, '+' + (members.length - maxDots));
-          cellEl.appendChild(overflow);
+          dotsWrap.appendChild(overflow);
         }
       }
+      cellEl.appendChild(dotsWrap);
       // Tooltip
       var d = new Date(cell.date + 'T00:00:00');
       var dayName = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
