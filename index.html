@@ -1355,7 +1355,16 @@
     var dayOfWeek = start.getDay(); // 0=Sun
     var offset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     start.setDate(start.getDate() + offset);
-    var days = Math.ceil((new Date() - start) / 86400000) + 1;
+    // Always produce full weeks (multiple of 7) up to end of current week (Sunday)
+    var end = new Date();
+    var endDay = end.getDay(); // 0=Sun
+    var daysToSunday = endDay === 0 ? 0 : 7 - endDay;
+    end.setDate(end.getDate() + daysToSunday);
+    end.setHours(0,0,0,0);
+    start.setHours(0,0,0,0);
+    var days = Math.round((end - start) / 86400000) + 1;
+    // Ensure multiple of 7
+    days = Math.ceil(days / 7) * 7;
     for (var i = 0; i < days; i++) {
       var d = new Date(start); d.setDate(d.getDate() + i);
       var key = toDateKey(d);
@@ -1535,10 +1544,10 @@
       if (cellDate > today) {
         cellEl.style.opacity = '0.3';
       } else if (members.length > 0) {
-        cellEl.style.background = '#2a2a2a';
+        cellEl.style.background = '#14532d';
         cellEl.style.padding = '2px';
         var maxDots = 9;
-        var dotSize = members.length <= 4 ? 7 : (members.length <= 9 ? 5 : 4);
+        var dotSize = members.length <= 4 ? 8 : (members.length <= 9 ? 6 : 4);
         var shown = members.slice(0, maxDots);
         shown.forEach(function(m) {
           var dot = document.createElement('div');
