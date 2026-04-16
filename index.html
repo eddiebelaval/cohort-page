@@ -914,12 +914,22 @@
   </div>
 </div>
 
+<!-- QUIZZES MODULE (owner: @allierays — see assets/quizzes/) -->
+<div class="container" style="padding: 32px 0;">
+  <div id="quizzes-root"></div>
+</div>
+
 <div class="container page-footer">
   <details class="changelog">
     <summary class="section-label" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">Changelog <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;">&#9660;</span></summary>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 16</span>
       <span class="changelog-text">docs: triad + execution layer</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 16</span>
+      <span class="changelog-text">feat: quizzes module handoff scaffold</span>
       <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
@@ -1199,6 +1209,10 @@
     currentTab: 'dashboard',
     myMemberId: null
   };
+
+  // Expose for feature modules (see assets/quizzes/)
+  window.sb = sb;
+  window.state = state;
 
   // Auth state listener
   sb.auth.onAuthStateChange(function(event, session) {
@@ -2509,6 +2523,45 @@
     subscribeRealtime();
   });
 })();
+</script>
+
+<!-- Quizzes module scoped styles -->
+<link rel="stylesheet" href="./assets/quizzes/quizzes.css">
+
+<!-- Quizzes module — owner: @allierays
+     The module exports mount(rootEl, ctx). We call it once the main app has a
+     member resolved. Module can also check window.__cohortCtx on subsequent
+     updates if it needs to react to auth changes later. -->
+<script type="module">
+  import { mount as mountQuizzes } from './assets/quizzes/index.js';
+
+  function bootQuizzes() {
+    const rootEl = document.getElementById('quizzes-root');
+    if (!rootEl) return;
+
+    const ctx = {
+      supabase: window.sb || null,
+      memberId: (window.state && window.state.myMemberId) || null,
+      onActivity: function(type) {
+        // Helper: write an activity row for streak integration.
+        // Allie — call this on quiz completion. See the spec for details.
+        if (!window.sb || !window.state || !window.state.myMemberId) return Promise.resolve();
+        const today = new Date().toISOString().slice(0, 10);
+        return window.sb.from('activity').upsert(
+          { member_id: window.state.myMemberId, activity_date: today, activity_type: type || 'quiz' },
+          { onConflict: 'member_id,activity_date,activity_type' }
+        );
+      }
+    };
+
+    mountQuizzes(rootEl, ctx);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootQuizzes);
+  } else {
+    bootQuizzes();
+  }
 </script>
 
 </body>
