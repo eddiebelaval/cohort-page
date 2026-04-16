@@ -1,0 +1,14 @@
+{
+  "_comment": "Maps git commit author names (%an) to contributor metadata. Used by scripts/update-changelog.sh to render the contributor badge on each changelog entry. Add new contributors here before they make their first commit.",
+  "contributors": {
+    "Eddie Belaval": {
+      "display": "Eddie",
+      "github": "eddiebelaval",
+      "color": "var(--accent)"
+    }
+  },
+  "_fallback": {
+    "display_from": "first_name",
+    "color": "var(--muted)"
+  }
+}

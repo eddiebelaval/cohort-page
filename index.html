@@ -624,12 +624,20 @@
   .page-footer { padding: 48px 0 80px; border-top: 1px solid var(--border); margin-top: 48px; }
   .changelog { margin-bottom: 40px; }
   .changelog-entry {
-    display: flex; gap: 14px; padding: 10px 0;
+    display: flex; gap: 14px; padding: 10px 0; align-items: center;
     border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5;
   }
   .changelog-entry:last-child { border-bottom: none; }
   .changelog-date { color: var(--muted); font-size: 11px; white-space: nowrap; min-width: 60px; font-weight: 500; }
-  .changelog-text { color: var(--ink); }
+  .changelog-text { color: var(--ink); flex: 1; }
+  .changelog-author {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.4px;
+    text-transform: uppercase; white-space: nowrap;
+    padding: 2px 8px; border-radius: 10px;
+    border: 1px solid var(--author-color, var(--border));
+    color: var(--author-color, var(--muted));
+    background: transparent;
+  }
   .request-btn {
     display: inline-block; font-family: 'DM Sans', sans-serif;
     font-size: 13px; font-weight: 600; color: var(--ink);
@@ -912,46 +920,57 @@
     <div class="changelog-entry">
       <span class="changelog-date">Apr 8</span>
       <span class="changelog-text">Name field now validates on signup. No more accidental emails as names.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 8</span>
       <span class="changelog-text">Community heatmap redesigned. Hover any day to see who was active. GitHub-style layout.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 8</span>
       <span class="changelog-text">Pro Tip of the Day added. Daily tips from course material with a log of previous tips.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 8</span>
       <span class="changelog-text">Full design polish. Warm palette, better spacing, mobile improvements, accessibility upgrades.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 7</span>
       <span class="changelog-text">WhatsApp banner added. Office hours locked: Tuesdays 7-8pm ET.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 6</span>
       <span class="changelog-text">Curriculum matched 100% to Skilljar. All 43 items across 6 courses verified.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 6</span>
       <span class="changelog-text">Full A-to-Z roadmap added. 6 phases from CPN Learning Path through certification exam.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 6</span>
       <span class="changelog-text">Magic link email sign-in. Your progress follows you across devices.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 5</span>
       <span class="changelog-text">Swimming lane progress chart, readiness scores, shared bookmarks, and milestone celebrations added.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 5</span>
       <span class="changelog-text">Cohort cap removed. Page now accepts unlimited signups (was limited to 10).</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 5</span>
       <span class="changelog-text">Cohort page launched.</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
     </div>
   </details>
 
