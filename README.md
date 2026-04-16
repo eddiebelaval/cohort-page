@@ -118,7 +118,9 @@ Every changelog entry shows the contributor badge derived from [`contributors.js
 
 ## License
 
-No license file yet. This repo is currently **all rights reserved** by default until a license is added. If you're contributing, you're granting your contributions back to the cohort under whatever license is chosen. If you want to use any of this code outside the cohort, open an issue.
+[MIT](./LICENSE). Copyright 2026 Eddie Belaval.
+
+Fork it, clone it, run your own cohort, strip it for parts. Contributions are welcome under the same license.
 
 ---
 
