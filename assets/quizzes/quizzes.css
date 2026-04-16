@@ -1,0 +1,26 @@
+/* Quizzes module styles
+ * Owner: Allie (@allierays)
+ * All selectors prefixed .quiz- to avoid colliding with main-app styles.
+ * Use root CSS vars from index.html for colors, don't introduce new tokens.
+ */
+
+.quiz-placeholder {
+  padding: 32px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  text-align: center;
+}
+
+.quiz-placeholder-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  margin: 0 0 8px;
+  color: var(--ink);
+}
+
+.quiz-placeholder-body {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+}

@@ -1,0 +1,11 @@
+# Code owners for cohort-page
+# Auto-requests review from the owner when PRs touch these paths.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+
+# Default — Eddie owns everything not otherwise listed
+*                                    @eddiebelaval
+
+# Quizzes module — Allie owns her feature surface
+/assets/quizzes/                     @allierays
+/docs/superpowers/specs/2026-04-16-quizzes-spec.md    @allierays
+/docs/superpowers/plans/2026-04-16-quizzes-schema.md  @allierays
