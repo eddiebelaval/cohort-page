@@ -30,10 +30,27 @@ If you own a module under `assets/<feature>/`, you have full autonomy inside tha
 
 - Every commit that ships a user-visible change automatically gets a changelog entry in the site footer.
 - Entries include a **contributor badge** colored per `contributors.json`. Add yourself there before your first commit.
-- The `scripts/update-changelog.sh` hook runs on commit — it reads your git author name (`%an`) and looks you up in the registry. Set your git config to match your entry:
+- The updater reads your git author name (`%an`) and looks you up in the registry. Set your git config to match your entry exactly:
   ```bash
   git config user.name "Your Name"
   ```
+
+### Two places the changelog updater runs
+
+| Where | When | Who needs it |
+|-------|------|--------------|
+| **GitHub Action** (`.github/workflows/update-changelog.yml`) | On every push to `main` | Everyone — no setup needed. The bot commits the changelog entry back with `[skip-changelog]` to avoid loops. |
+| **Local post-commit hook** | After each commit on your machine | Optional. Gives you immediate feedback before pushing. |
+
+To install the local hook:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+### Skipping the changelog for a commit
+
+Prefix your commit message with `chore:`, `typo:`, `wip:`, `merge:`, or `fix:`, **or** include `[skip-changelog]` anywhere in the commit body. The updater will pass over it.
 
 ## Local dev
 

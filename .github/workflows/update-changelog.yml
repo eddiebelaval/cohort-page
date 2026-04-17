@@ -1,0 +1,62 @@
+name: Auto-update changelog
+
+# Runs after every push to main. Reads the freshly-pushed commit, resolves
+# the contributor badge, and appends an entry to the changelog in index.html.
+#
+# Works for all contributors — they don't need any local hook installed.
+# Skips its own commits via [skip-changelog] in the commit body.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    # Don't recurse on our own bot commits
+    if: ${{ !contains(github.event.head_commit.message, '[skip-changelog]') && github.actor != 'github-actions[bot]' }}
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run changelog updater
+        # Pass the pushed commit SHA via env so untrusted input never reaches
+        # the shell interpolation layer. COMMIT_SHA is a git hash (safe),
+        # but we use env for consistency with the commit/push step below.
+        env:
+          COMMIT_SHA: ${{ github.event.head_commit.id }}
+        run: |
+          bash scripts/update-changelog.sh "$COMMIT_SHA"
+
+      - name: Commit and push if changed
+        # Author name/email from commit metadata are UNTRUSTED input — they
+        # could contain shell metacharacters from a malicious git config.
+        # Passing via env (quoted "$VAR") isolates them from shell parsing.
+        env:
+          AUTHOR_NAME: ${{ github.event.head_commit.author.name }}
+          AUTHOR_EMAIL: ${{ github.event.head_commit.author.email }}
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No changelog change to commit."
+            exit 0
+          fi
+
+          git config user.name  "$AUTHOR_NAME"
+          git config user.email "$AUTHOR_EMAIL"
+
+          git add index.html
+          git commit -m "chore: auto-update changelog [skip-changelog]"
+          git push origin main
