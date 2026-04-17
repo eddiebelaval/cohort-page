@@ -1,0 +1,26 @@
+# Vercel
+.vercel/
+
+# gstack (local browser automation artifacts)
+.gstack/
+
+# Superpowers agent framework (local-only)
+.superpowers/
+
+# macOS
+.DS_Store
+
+# Editor junk
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
