@@ -588,7 +588,25 @@
   max-width: 600px;
   margin: 0 auto;
   padding: 24px 0;
-  text-align: center;
+}
+
+.quiz-handsfree .quiz-scenario {
+  text-align: left;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.quiz-handsfree .quiz-prompt {
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.quiz-handsfree .quiz-options {
+  margin-bottom: 16px;
+}
+
+.quiz-handsfree .quiz-explanation {
+  margin-bottom: 16px;
 }
 
 .quiz-hf-status {
@@ -602,7 +620,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
+}
+
+.quiz-hf-result {
+  text-align: center;
 }
 
 .quiz-hf-listening {
@@ -642,14 +664,14 @@
 }
 
 .quiz-hf-commands {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--muted);
-  line-height: 1.8;
-  margin-top: 16px;
-  padding: 12px 16px;
+  line-height: 1.6;
+  margin-top: 12px;
+  padding: 8px 12px;
   background: var(--card-bg);
-  border-radius: 8px;
-  text-align: left;
+  border-radius: 6px;
+  text-align: center;
 }
 
 .quiz-hf-commands strong {
@@ -675,7 +697,8 @@
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 24px;
+  margin-bottom: 8px;
 }
 
 .quiz-hf-control-btn {

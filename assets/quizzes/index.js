@@ -850,9 +850,7 @@ function renderLanding(rootEl, state, actions) {
 
   var hfCard = document.createElement('div');
   hfCard.className = 'quiz-mode-card';
-  hfCard.onclick = HAS_TTS && HAS_STT ? actions.hfStart : function () {
-    alert('Hands-free mode requires a browser with speech recognition support (Chrome, Safari, or Edge).');
-  };
+  hfCard.onclick = actions.hfStart;
   hfCard.appendChild(el('div', { className: 'quiz-mode-icon' }, iconEl(ICON_MIC)));
   hfCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Hands-Free Practice'));
   hfCard.appendChild(el('div', { className: 'quiz-mode-desc' }, state.allQuestions.length + ' questions \u00B7 voice-only \u00B7 great for commutes'));
@@ -1225,15 +1223,24 @@ function renderHandsFree(rootEl, state, actions) {
     el('p', { className: 'quiz-prompt' }, q.prompt)
   );
 
-  // Options (visible for reference, not clickable in hands-free)
-  if (state.hfState === 'listening' || state.hfState === 'paused') {
-    var optionEls = q.options.map(function (text, i) {
-      return el('div', { className: 'quiz-option quiz-option--disabled' }, [
-        el('span', { className: 'quiz-option-letter' }, LETTERS[i]),
-        el('span', { className: 'quiz-option-text' }, text),
-      ]);
-    });
-    children.push(el('div', { className: 'quiz-options' }, optionEls));
+  // Options — always visible for reference
+  var hfAnswer = state.answers[state.currentIndex];
+  var optionEls = q.options.map(function (text, i) {
+    var cls = 'quiz-option quiz-option--disabled';
+    if (hfAnswer) {
+      if (i === q.correct_index) cls += ' quiz-option--correct';
+      else if (i === hfAnswer.selected_index && i !== q.correct_index) cls += ' quiz-option--incorrect';
+    }
+    return el('div', { className: cls }, [
+      el('span', { className: 'quiz-option-letter' }, LETTERS[i]),
+      el('span', { className: 'quiz-option-text' }, text),
+    ]);
+  });
+  children.push(el('div', { className: 'quiz-options' }, optionEls));
+
+  // Explanation after answering
+  if (hfAnswer && q.explanation) {
+    children.push(el('div', { className: 'quiz-explanation' }, q.explanation));
   }
 
   // Control buttons
@@ -1413,6 +1420,13 @@ export async function mount(rootEl, ctx) {
     // ── Hands-free mode actions ──
 
     hfStart: function () {
+      // Check browser support at call time (not module load)
+      var ttsOk = 'speechSynthesis' in window;
+      var sttOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      if (!ttsOk) {
+        rootEl.replaceChildren(el('div', { className: 'quiz-empty' }, 'Hands-free mode requires a browser with speech synthesis support (Chrome, Safari, or Edge).'));
+        return;
+      }
       stopSpeech();
       if (state.activeRec) { state.activeRec.stop(); state.activeRec = null; }
 
