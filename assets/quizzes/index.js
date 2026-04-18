@@ -471,10 +471,20 @@ function speakQuestion(q, onEnd) {
   testAudio.load();
 }
 
-function speakExplanation(q, wasCorrect) {
-  if (!HAS_TTS) return;
-  var prefix = wasCorrect ? 'Correct! ' : 'Incorrect. The correct answer is ' + LETTERS[q.correct_index] + '. ';
-  speak(prefix + (q.explanation || ''));
+function speakExplanation(q, wasCorrect, onEnd) {
+  var suffix = wasCorrect ? '-correct' : '-incorrect';
+  var audioSrc = './assets/quizzes/audio/' + q.id + suffix + '.mp3';
+  var testAudio = new Audio(audioSrc);
+  testAudio.oncanplaythrough = function () {
+    playAudio(audioSrc, onEnd);
+  };
+  testAudio.onerror = function () {
+    // Fallback to browser TTS
+    if (!HAS_TTS) { if (onEnd) onEnd(); return; }
+    var prefix = wasCorrect ? 'Correct! ' : 'Incorrect. The correct answer is ' + LETTERS[q.correct_index] + '. ';
+    speak(prefix + (q.explanation || ''), onEnd);
+  };
+  testAudio.load();
 }
 
 function stopSpeech() {
@@ -1324,10 +1334,7 @@ function hfReadFeedback(state, rootEl, actions, correct, q) {
   state.hfState = 'answered';
   renderHandsFree(rootEl, state, actions);
 
-  var prefix = correct ? 'Correct! ' : 'Incorrect. The correct answer is ' + LETTERS[q.correct_index] + '. ';
-  var text = prefix + (q.explanation || '');
-
-  speak(text, function () {
+  speakExplanation(q, correct, function () {
     if (!state.hfActive) return;
     // Auto-advance after a brief pause
     setTimeout(function () {
