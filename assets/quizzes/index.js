@@ -638,6 +638,58 @@ async function saveAttempt(supabase, memberId, quizId, answers, score, total) {
   });
 }
 
+// ── Local quiz stats (localStorage, works without Supabase) ──
+
+var STATS_KEY = 'quiz_stats';
+
+function loadStats() {
+  try {
+    var raw = localStorage.getItem(STATS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* corrupted */ }
+  return { totalCorrect: 0, totalAnswered: 0, domainStats: {}, sessions: [], streak: 0, lastDate: null };
+}
+
+function saveStats(stats) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) { /* full */ }
+}
+
+function recordQuizResult(answers) {
+  var stats = loadStats();
+  var today = new Date().toISOString().slice(0, 10);
+  var correct = 0;
+
+  answers.forEach(function (a) {
+    stats.totalAnswered++;
+    if (a.correct) { stats.totalCorrect++; correct++; }
+    // Per-domain tracking
+    if (a.domain) {
+      if (!stats.domainStats[a.domain]) stats.domainStats[a.domain] = { correct: 0, total: 0 };
+      stats.domainStats[a.domain].total++;
+      if (a.correct) stats.domainStats[a.domain].correct++;
+    }
+  });
+
+  // Track session
+  stats.sessions.push({ date: today, correct: correct, total: answers.length });
+  // Keep last 30 sessions
+  if (stats.sessions.length > 30) stats.sessions = stats.sessions.slice(-30);
+
+  // Update streak
+  if (stats.lastDate === today) {
+    // Already practiced today, streak unchanged
+  } else {
+    var yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    var yStr = yesterday.toISOString().slice(0, 10);
+    stats.streak = (stats.lastDate === yStr) ? stats.streak + 1 : 1;
+    stats.lastDate = today;
+  }
+
+  saveStats(stats);
+  return stats;
+}
+
 // ── State ──
 
 function createState() {
@@ -735,6 +787,52 @@ function renderLanding(rootEl, state, actions) {
   hfCard.appendChild(el('div', { className: 'quiz-mode-desc' }, state.allQuestions.length + ' questions \u00B7 voice-only \u00B7 great for commutes'));
 
   children.push(el('div', { className: 'quiz-modes' }, [dailyCard, hfCard]));
+
+  // Quiz stats from localStorage
+  var stats = loadStats();
+  if (stats.totalAnswered > 0) {
+    var accuracy = Math.round((stats.totalCorrect / stats.totalAnswered) * 100);
+
+    var statItems = [
+      el('div', { className: 'quiz-stat' }, [
+        el('span', { className: 'quiz-stat-value' }, String(stats.totalAnswered)),
+        el('span', { className: 'quiz-stat-label' }, 'Answered'),
+      ]),
+      el('div', { className: 'quiz-stat' }, [
+        el('span', { className: 'quiz-stat-value' }, accuracy + '%'),
+        el('span', { className: 'quiz-stat-label' }, 'Accuracy'),
+      ]),
+      el('div', { className: 'quiz-stat' }, [
+        el('span', { className: 'quiz-stat-value' }, String(stats.streak)),
+        el('span', { className: 'quiz-stat-label' }, stats.streak === 1 ? 'Day' : 'Day Streak'),
+      ]),
+    ];
+
+    // Per-domain accuracy bars
+    var domainRows = Object.keys(stats.domainStats).map(function (key) {
+      var d = stats.domainStats[key];
+      var dpct = d.total > 0 ? Math.round((d.correct / d.total) * 100) : 0;
+      var barClass = dpct >= 70 ? 'quiz-domain-bar-fill--good' : dpct >= 40 ? 'quiz-domain-bar-fill--ok' : 'quiz-domain-bar-fill--bad';
+      return el('div', { className: 'quiz-domain-row' }, [
+        el('span', { className: 'quiz-domain-name' }, DOMAINS[key] ? DOMAINS[key].label : key),
+        el('div', { className: 'quiz-domain-bar-track' }, [
+          el('div', { className: 'quiz-domain-bar-fill ' + barClass, style: 'width:' + dpct + '%' }),
+        ]),
+        el('span', { className: 'quiz-domain-score' }, d.correct + '/' + d.total),
+      ]);
+    });
+
+    children.push(
+      el('div', { className: 'quiz-stats-section' }, [
+        el('div', { className: 'quiz-stats-header' }, 'Your Progress'),
+        el('div', { className: 'quiz-stats-row' }, statItems),
+      ].concat(domainRows.length > 0 ? [
+        el('div', { className: 'quiz-domain-breakdown' }, [
+          el('p', { className: 'quiz-domain-breakdown-title', style: 'margin-top:16px' }, 'Accuracy by Domain'),
+        ].concat(domainRows))
+      ] : []))
+    );
+  }
 
   // Previous results
   if (state.recentAttempts.length > 0) {
@@ -1145,6 +1243,8 @@ export async function mount(rootEl, ctx) {
       var score = state.answers.filter(function (a) { return a.correct; }).length;
       var total = state.answers.length;
       state.view = 'results';
+      // Track locally
+      recordQuizResult(state.answers);
       renderResults(rootEl, state, actions);
 
       // Save attempt and fire streak
@@ -1250,6 +1350,9 @@ export async function mount(rootEl, ctx) {
       state.hfActive = false;
       if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
       state.hfState = 'finished';
+      // Track locally
+      var answered = state.answers.filter(Boolean);
+      if (answered.length > 0) recordQuizResult(answered);
       renderHandsFree(rootEl, state, actions);
 
       // Fire streak if at least one question answered
