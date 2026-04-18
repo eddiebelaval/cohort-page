@@ -501,6 +501,8 @@ function startContinuousListening(onCommand, onStateChange) {
     // Match navigation commands
     if (/\b(REPEAT|AGAIN|SAY.*(AGAIN|THAT))\b/.test(transcript)) { onCommand('repeat'); return; }
     if (/\b(SKIP|NEXT|PASS)\b/.test(transcript)) { onCommand('skip'); return; }
+    if (/\b(PAUSE|HOLD|WAIT)\b/.test(transcript)) { onCommand('pause'); return; }
+    if (/\b(RESUME|CONTINUE|GO|PLAY)\b/.test(transcript)) { onCommand('resume'); return; }
     if (/\b(STOP|QUIT|END|EXIT|DONE)\b/.test(transcript)) { onCommand('stop'); return; }
   };
 
@@ -709,7 +711,9 @@ function createState() {
     // Hands-free mode
     hfActive: false,         // hands-free mode running
     hfListener: null,        // continuous recognition handle
-    hfState: 'idle',         // idle | speaking | listening | answered
+    hfState: 'idle',         // idle | speaking | listening | answered | paused
+    hfPaused: false,         // pause flag (keeps session alive)
+    hfResumeState: null,     // state to restore on resume
     hfScore: 0,              // running score in hands-free
     hfTotal: 0,              // questions answered in hands-free
     hfQuestions: [],          // shuffled full question bank for hands-free
@@ -1073,7 +1077,6 @@ function renderHandsFree(rootEl, state, actions) {
   var children = [];
 
   if (state.hfState === 'finished') {
-    // Session complete
     var pct = state.hfTotal > 0 ? Math.round((state.hfScore / state.hfTotal) * 100) : 0;
     children = [
       el('h3', { className: 'quiz-hf-status' }, 'Practice Complete'),
@@ -1083,70 +1086,133 @@ function renderHandsFree(rootEl, state, actions) {
       ]),
       el('button', { className: 'quiz-start-btn', onclick: actions.home, style: 'margin-top:20px' }, 'Back to Quiz Home'),
     ];
+    rootEl.replaceChildren(el('div', { className: 'quiz-handsfree' }, children));
+    return;
+  }
+
+  var q = state.hfQuestions[state.currentIndex];
+  var progress = (state.currentIndex + 1) + ' of ' + state.hfQuestions.length;
+  var scoreText = state.hfTotal > 0 ? state.hfScore + '/' + state.hfTotal + ' correct' : '';
+
+  // Top bar with back and score
+  children.push(
+    el('div', { className: 'quiz-topbar' }, [
+      el('button', { className: 'quiz-back-link', onclick: actions.hfStop }, '\u2190 End'),
+      el('span', { className: 'quiz-progress-label' }, scoreText),
+    ])
+  );
+
+  // Progress bar
+  var progressPct = ((state.currentIndex + 1) / state.hfQuestions.length * 100).toFixed(0);
+  children.push(
+    el('div', { className: 'quiz-progress' }, [
+      el('span', { className: 'quiz-progress-label' }, 'Question ' + progress),
+      el('div', { className: 'quiz-progress-track' }, [
+        el('div', { className: 'quiz-progress-bar', style: 'width:' + progressPct + '%' }),
+      ]),
+    ])
+  );
+
+  // Domain + status indicator row
+  var statusCls = 'quiz-hf-listening';
+  var statusText = '';
+  var isPaused = state.hfState === 'paused';
+
+  if (isPaused) {
+    statusCls += ' quiz-hf-listening--paused';
+    statusText = 'Paused';
+  } else if (state.hfState === 'speaking') {
+    statusCls += ' quiz-hf-listening--speaking';
+    statusText = 'Speaking...';
+  } else if (state.hfState === 'listening') {
+    statusCls += ' quiz-hf-listening--active';
+    statusText = 'Listening...';
+  } else if (state.hfState === 'answered') {
+    statusCls += ' quiz-hf-listening--waiting';
+    statusText = 'Next question...';
   } else {
-    var q = state.hfQuestions[state.currentIndex];
-    var progress = (state.currentIndex + 1) + ' of ' + state.hfQuestions.length;
+    statusCls += ' quiz-hf-listening--waiting';
+    statusText = 'Starting...';
+  }
 
-    // Status indicator
-    var statusCls = 'quiz-hf-listening';
-    var statusText = '';
-    if (state.hfState === 'speaking') {
-      statusCls += ' quiz-hf-listening--speaking';
-      statusText = 'Speaking...';
-    } else if (state.hfState === 'listening') {
-      statusCls += ' quiz-hf-listening--active';
-      statusText = 'Listening...';
-    } else if (state.hfState === 'answered') {
-      statusCls += ' quiz-hf-listening--waiting';
-      statusText = 'Next question loading...';
-    } else {
-      statusCls += ' quiz-hf-listening--waiting';
-      statusText = 'Starting...';
-    }
-
-    children.push(
-      el('p', { className: 'quiz-hf-progress' }, 'Question ' + progress),
+  children.push(
+    el('div', { className: 'quiz-hf-status-row' }, [
       el('span', { className: 'quiz-question-domain' }, DOMAINS[q.domain] ? DOMAINS[q.domain].label : q.domain),
-      el('div', { className: statusCls }, statusText)
-    );
+      el('span', { className: statusCls }, statusText),
+    ])
+  );
 
-    // Show result feedback if answered
-    if (state.hfState === 'answered' && state.answers[state.currentIndex]) {
-      var a = state.answers[state.currentIndex];
-      children.push(
-        el('p', {
-          className: 'quiz-hf-result ' + (a.correct ? 'quiz-hf-result--correct' : 'quiz-hf-result--incorrect')
-        }, a.correct ? 'Correct!' : 'Incorrect — answer was ' + LETTERS[q.correct_index])
-      );
-    }
-
-    // Scenario and question (visible for glancing, but main interaction is audio)
+  // Result feedback
+  if (state.hfState === 'answered' && state.answers[state.currentIndex]) {
+    var a = state.answers[state.currentIndex];
     children.push(
-      el('div', { className: 'quiz-scenario', style: 'text-align:left;font-size:13px;margin-top:16px' }, q.scenario),
-      el('p', { className: 'quiz-prompt', style: 'text-align:left;font-size:14px' }, q.prompt)
-    );
-
-    // Voice command hints
-    children.push(
-      el('div', { className: 'quiz-hf-commands' }, [
-        el('strong', null, 'Voice commands: '),
-        document.createTextNode('Say '),
-        el('strong', null, 'A, B, C, D'),
-        document.createTextNode(' to answer  •  '),
-        el('strong', null, 'repeat'),
-        document.createTextNode(' to hear again  •  '),
-        el('strong', null, 'skip'),
-        document.createTextNode(' to pass  •  '),
-        el('strong', null, 'stop'),
-        document.createTextNode(' to end'),
-      ])
-    );
-
-    // Stop button (manual fallback)
-    children.push(
-      el('button', { className: 'quiz-hf-stop-btn', onclick: actions.hfStop }, 'Stop Practice')
+      el('div', {
+        className: 'quiz-hf-result ' + (a.correct ? 'quiz-hf-result--correct' : 'quiz-hf-result--incorrect')
+      }, a.correct ? 'Correct!' : 'Incorrect — answer was ' + LETTERS[q.correct_index])
     );
   }
+
+  // Scenario and question
+  children.push(
+    el('div', { className: 'quiz-scenario' }, q.scenario),
+    el('p', { className: 'quiz-prompt' }, q.prompt)
+  );
+
+  // Options (visible for reference, not clickable in hands-free)
+  if (state.hfState === 'listening' || state.hfState === 'paused') {
+    var optionEls = q.options.map(function (text, i) {
+      return el('div', { className: 'quiz-option quiz-option--disabled' }, [
+        el('span', { className: 'quiz-option-letter' }, LETTERS[i]),
+        el('span', { className: 'quiz-option-text' }, text),
+      ]);
+    });
+    children.push(el('div', { className: 'quiz-options' }, optionEls));
+  }
+
+  // Control buttons
+  var controls = [];
+
+  // Pause / Resume button
+  if (isPaused) {
+    var resumeBtn = document.createElement('button');
+    resumeBtn.className = 'quiz-hf-control-btn quiz-hf-control-btn--resume';
+    resumeBtn.appendChild(iconEl('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>'));
+    resumeBtn.appendChild(document.createTextNode(' Resume'));
+    resumeBtn.onclick = actions.hfResume;
+    controls.push(resumeBtn);
+  } else {
+    var pauseBtn = document.createElement('button');
+    pauseBtn.className = 'quiz-hf-control-btn quiz-hf-control-btn--pause';
+    pauseBtn.appendChild(iconEl('<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'));
+    pauseBtn.appendChild(document.createTextNode(' Pause'));
+    pauseBtn.onclick = actions.hfPause;
+    controls.push(pauseBtn);
+  }
+
+  var stopBtn = document.createElement('button');
+  stopBtn.className = 'quiz-hf-control-btn quiz-hf-control-btn--stop';
+  stopBtn.appendChild(iconEl(ICON_STOP));
+  stopBtn.appendChild(document.createTextNode(' Stop'));
+  stopBtn.onclick = actions.hfStop;
+  controls.push(stopBtn);
+
+  children.push(el('div', { className: 'quiz-hf-controls' }, controls));
+
+  // Voice command hints
+  children.push(
+    el('div', { className: 'quiz-hf-commands' }, [
+      el('strong', null, 'Say: '),
+      el('strong', null, 'A, B, C, D'),
+      document.createTextNode(' answer  \u00B7  '),
+      el('strong', null, 'repeat'),
+      document.createTextNode('  \u00B7  '),
+      el('strong', null, 'skip'),
+      document.createTextNode('  \u00B7  '),
+      el('strong', null, 'pause'),
+      document.createTextNode('  \u00B7  '),
+      el('strong', null, 'stop'),
+    ])
+  );
 
   rootEl.replaceChildren(el('div', { className: 'quiz-handsfree' }, children));
 }
@@ -1325,6 +1391,10 @@ export async function mount(rootEl, ctx) {
             } else {
               hfReadQuestion(state, rootEl, actions);
             }
+          } else if (cmd === 'pause') {
+            actions.hfPause();
+          } else if (cmd === 'resume') {
+            actions.hfResume();
           } else if (cmd === 'stop') {
             actions.hfStop();
           }
@@ -1343,6 +1413,39 @@ export async function mount(rootEl, ctx) {
         if (!state.hfActive) return;
         hfReadQuestion(state, rootEl, actions);
       });
+    },
+
+    hfPause: function () {
+      stopSpeech();
+      state.hfPaused = true;
+      state.hfResumeState = state.hfState;
+      state.hfState = 'paused';
+      renderHandsFree(rootEl, state, actions);
+      speak('Paused.');
+    },
+
+    hfResume: function () {
+      state.hfPaused = false;
+      var resumeTo = state.hfResumeState || 'listening';
+      state.hfResumeState = null;
+      if (resumeTo === 'speaking' || resumeTo === 'listening' || resumeTo === 'idle') {
+        speak('Resuming.', function () {
+          if (!state.hfActive) return;
+          hfReadQuestion(state, rootEl, actions);
+        });
+      } else if (resumeTo === 'answered') {
+        // Was mid-feedback, just advance to next
+        state.currentIndex++;
+        if (state.currentIndex >= state.hfQuestions.length) {
+          state.hfState = 'finished';
+          renderHandsFree(rootEl, state, actions);
+        } else {
+          speak('Resuming.', function () {
+            if (!state.hfActive) return;
+            hfReadQuestion(state, rootEl, actions);
+          });
+        }
+      }
     },
 
     hfStop: function () {
