@@ -328,7 +328,7 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--ink);
-  animation: quiz-fadeIn 0.25s ease;
+  animation: quiz-fade-in 0.25s ease;
 }
 
 .quiz-next-btn {
@@ -682,7 +682,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 12px 0;
-  animation: quiz-fadeIn 0.25s ease;
+  animation: quiz-fade-in 0.25s ease;
 }
 
 .quiz-hf-result--correct {
@@ -819,7 +819,7 @@
   font-size: 14px;
 }
 
-@keyframes quiz-fadeIn {
+@keyframes quiz-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }

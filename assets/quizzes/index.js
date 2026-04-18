@@ -494,27 +494,26 @@ function stopSpeech() {
 
 // Map spoken words to answer indices
 function parseAnswerFromSpeech(transcript) {
-  var t = transcript.trim().toUpperCase();
-  // Direct letter match
-  var letterMatch = t.match(/\b([ABCD])\b/);
-  if (letterMatch) return LETTERS.indexOf(letterMatch[1]);
-  // Spoken letter names: "ay", "bee/be", "see/sea", "dee"
-  if (/\b(AY|EH|HEY)\b/.test(t)) return 0;
-  if (/\b(BEE?|BE)\b/.test(t)) return 1;
-  if (/\b(SEE|SEA|CEE)\b/.test(t)) return 2;
-  if (/\b(DEE|THE)\b/.test(t)) return 3;
-  // Number words: "one/first", "two/second", "three/third", "four/fourth"
-  if (/\b(ONE|1|FIRST|1ST)\b/.test(t)) return 0;
-  if (/\b(TWO|2|SECOND|2ND)\b/.test(t)) return 1;
-  if (/\b(THREE|3|THIRD|3RD)\b/.test(t)) return 2;
-  if (/\b(FOUR|4|FOURTH|4TH)\b/.test(t)) return 3;
-  // "option A", "answer B", "choice C"
-  var optMatch = t.match(/(?:OPTION|ANSWER|CHOICE|NUMBER)\s*([ABCD1-4])/);
+  var t = transcript.trim().toUpperCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  // Explicit answer phrases first: "option A", "answer B", "choice C"
+  var optMatch = t.match(/\b(?:OPTION|ANSWER|CHOICE|NUMBER)\s*([ABCD1-4])\b/);
   if (optMatch) {
     var v = optMatch[1];
-    if (v >= '1' && v <= '4') return parseInt(v) - 1;
+    if (v >= '1' && v <= '4') return parseInt(v, 10) - 1;
     return LETTERS.indexOf(v);
   }
+  // Exact single letter/word match (whole utterance is just the answer)
+  if (/^[ABCD]$/.test(t)) return LETTERS.indexOf(t);
+  // Spoken letter names — only when the whole utterance is the letter name
+  if (/^(AY|EH|HEY)$/.test(t)) return 0;
+  if (/^(BEE)$/.test(t)) return 1;
+  if (/^(SEE|SEA|CEE)$/.test(t)) return 2;
+  if (/^(DEE)$/.test(t)) return 3;
+  // Number words — only whole utterance
+  if (/^(ONE|1|FIRST|1ST)$/.test(t)) return 0;
+  if (/^(TWO|2|SECOND|2ND)$/.test(t)) return 1;
+  if (/^(THREE|3|THIRD|3RD)$/.test(t)) return 2;
+  if (/^(FOUR|4|FOURTH|4TH)$/.test(t)) return 3;
   return -1;
 }
 
@@ -882,14 +881,16 @@ function renderLanding(rootEl, state, actions) {
   }
 
   // Two mode cards
-  var dailyCard = document.createElement('div');
+  var dailyCard = document.createElement('button');
+  dailyCard.type = 'button';
   dailyCard.className = 'quiz-mode-card';
   dailyCard.onclick = actions.start;
   dailyCard.appendChild(el('div', { className: 'quiz-mode-icon' }, '5'));
   dailyCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Daily Quiz'));
   dailyCard.appendChild(el('div', { className: 'quiz-mode-desc' }, state.questions.length + ' questions \u00B7 streak tracking \u00B7 new set each day'));
 
-  var hfCard = document.createElement('div');
+  var hfCard = document.createElement('button');
+  hfCard.type = 'button';
   hfCard.className = 'quiz-mode-card';
   hfCard.onclick = actions.hfStart;
   hfCard.appendChild(el('div', { className: 'quiz-mode-icon' }, iconEl(ICON_MIC)));
@@ -1338,11 +1339,10 @@ function hfReadFeedback(state, rootEl, actions, correct, q) {
     if (!state.hfActive) return;
     // Auto-advance after a brief pause
     setTimeout(function () {
-      if (!state.hfActive) return;
+      if (!state.hfActive || state.hfPaused) return;
       state.currentIndex++;
       if (state.currentIndex >= state.hfQuestions.length) {
-        state.hfState = 'finished';
-        renderHandsFree(rootEl, state, actions);
+        actions.hfStop();
       } else {
         hfReadQuestion(state, rootEl, actions);
       }
@@ -1355,7 +1355,11 @@ function hfReadFeedback(state, rootEl, actions, correct, q) {
 export async function mount(rootEl, ctx) {
   var state = createState();
   var supabase = ctx.supabase;
-  var memberId = ctx.memberId;
+
+  // Resolve memberId lazily — auth may not be ready at mount time
+  function getMemberId() {
+    return ctx.memberId || (window.state && window.state.myMemberId) || null;
+  }
 
   // Actions object — closures over state & rootEl
   var actions = {
@@ -1406,14 +1410,13 @@ export async function mount(rootEl, ctx) {
       clearSession();
       renderResults(rootEl, state, actions);
 
-      // Save attempt and fire streak
-      if (supabase && memberId && state.quizId) {
-        try {
-          await saveAttempt(supabase, memberId, state.quizId, state.answers, score, total);
-          await ctx.onActivity('quiz');
-        } catch (e) {
-          // Non-blocking — don't interrupt the results view
-        }
+      // Save attempt and fire streak (decoupled so one failure doesn't block the other)
+      var mid = getMemberId();
+      if (supabase && mid && state.quizId && state.quizId !== 'local') {
+        try { await saveAttempt(supabase, mid, state.quizId, state.answers, score, total); } catch (e) { /* non-blocking */ }
+      }
+      if (mid && typeof ctx.onActivity === 'function') {
+        try { await ctx.onActivity('quiz'); } catch (e) { /* non-blocking */ }
       }
     },
 
@@ -1439,8 +1442,8 @@ export async function mount(rootEl, ctx) {
       // Check browser support at call time (not module load)
       var ttsOk = 'speechSynthesis' in window;
       var sttOk = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-      if (!ttsOk) {
-        rootEl.replaceChildren(el('div', { className: 'quiz-empty' }, 'Hands-free mode requires a browser with speech synthesis support (Chrome, Safari, or Edge).'));
+      if (!ttsOk || !sttOk) {
+        rootEl.replaceChildren(el('div', { className: 'quiz-empty' }, 'Hands-free mode requires a browser with speech synthesis and recognition support (Chrome, Safari, or Edge).'));
         return;
       }
       stopSpeech();
@@ -1486,10 +1489,7 @@ export async function mount(rootEl, ctx) {
             stopSpeech();
             state.currentIndex++;
             if (state.currentIndex >= state.hfQuestions.length) {
-              state.hfState = 'finished';
-              state.hfActive = false;
-              if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
-              renderHandsFree(rootEl, state, actions);
+              actions.hfStop();
             } else {
               hfReadQuestion(state, rootEl, actions);
             }
@@ -1537,8 +1537,7 @@ export async function mount(rootEl, ctx) {
         // Was mid-feedback, just advance to next
         state.currentIndex++;
         if (state.currentIndex >= state.hfQuestions.length) {
-          state.hfState = 'finished';
-          renderHandsFree(rootEl, state, actions);
+          actions.hfStop();
         } else {
           speak('Resuming.', function () {
             if (!state.hfActive) return;
@@ -1560,7 +1559,8 @@ export async function mount(rootEl, ctx) {
       renderHandsFree(rootEl, state, actions);
 
       // Fire streak if at least one question answered
-      if (state.hfTotal > 0 && supabase && memberId) {
+      var mid = getMemberId();
+      if (state.hfTotal > 0 && mid && typeof ctx.onActivity === 'function') {
         ctx.onActivity('quiz').catch(function () {});
       }
     },
@@ -1571,11 +1571,12 @@ export async function mount(rootEl, ctx) {
       state.hfActive = false;
       if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
       // Refresh today's attempts
-      if (supabase && memberId && state.quizId) {
+      var mid = getMemberId();
+      if (supabase && mid && state.quizId && state.quizId !== 'local') {
         try {
-          var todayAttempts = await fetchTodayAttempts(supabase, memberId, state.quizId);
+          var todayAttempts = await fetchTodayAttempts(supabase, mid, state.quizId);
           state.todayBest = todayAttempts.length > 0 ? todayAttempts[0] : null;
-          var recent = await fetchRecentAttempts(supabase, memberId, state.quizId);
+          var recent = await fetchRecentAttempts(supabase, mid, state.quizId);
           state.recentAttempts = recent;
         } catch (e) { /* use existing state */ }
       }
@@ -1613,11 +1614,12 @@ export async function mount(rootEl, ctx) {
   state.questions = selectDailyQuestions(state.allQuestions, seed);
 
   // Check for existing attempts today (only works with DB)
-  if (useDb && memberId && state.quizId) {
+  var bootMemberId = getMemberId();
+  if (useDb && bootMemberId && state.quizId) {
     try {
-      var todayAttempts = await fetchTodayAttempts(supabase, memberId, state.quizId);
+      var todayAttempts = await fetchTodayAttempts(supabase, bootMemberId, state.quizId);
       state.todayBest = todayAttempts.length > 0 ? todayAttempts[0] : null;
-      state.recentAttempts = await fetchRecentAttempts(supabase, memberId, state.quizId);
+      state.recentAttempts = await fetchRecentAttempts(supabase, bootMemberId, state.quizId);
     } catch (e) { /* proceed without history */ }
   }
 
@@ -1672,9 +1674,7 @@ export async function mount(rootEl, ctx) {
               stopSpeech();
               state.currentIndex++;
               if (state.currentIndex >= state.hfQuestions.length) {
-                state.hfState = 'finished'; state.hfActive = false;
-                if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
-                renderHandsFree(rootEl, state, actions);
+                actions.hfStop();
               } else { hfReadQuestion(state, rootEl, actions); }
             } else if (cmd === 'pause') { actions.hfPause(); }
           },
