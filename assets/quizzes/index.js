@@ -432,13 +432,43 @@ function speak(text, onEnd) {
   window.speechSynthesis.speak(utterance);
 }
 
-function speakQuestion(q) {
-  if (!HAS_TTS) return;
-  var text = q.scenario + '. ' + q.prompt + '. ';
-  q.options.forEach(function (opt, i) {
-    text += 'Option ' + LETTERS[i] + ': ' + opt + '. ';
-  });
-  speak(text);
+// Pre-recorded audio playback with TTS fallback
+var currentAudio = null;
+
+function playAudio(src, onEnd) {
+  stopAudio();
+  var audio = new Audio(src);
+  audio.onended = function () { currentAudio = null; if (onEnd) onEnd(); };
+  audio.onerror = function () { currentAudio = null; if (onEnd) onEnd(); };
+  currentAudio = audio;
+  audio.play().catch(function () { currentAudio = null; if (onEnd) onEnd(); });
+}
+
+function stopAudio() {
+  if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+}
+
+function isAudioPlaying() {
+  return currentAudio && !currentAudio.paused;
+}
+
+function speakQuestion(q, onEnd) {
+  // Try pre-recorded audio first
+  var audioSrc = './assets/quizzes/audio/' + q.id + '.mp3';
+  var testAudio = new Audio(audioSrc);
+  testAudio.oncanplaythrough = function () {
+    playAudio(audioSrc, onEnd);
+  };
+  testAudio.onerror = function () {
+    // Fallback to browser TTS
+    if (!HAS_TTS) { if (onEnd) onEnd(); return; }
+    var text = q.scenario + '. ' + q.prompt + '. ';
+    q.options.forEach(function (opt, i) {
+      text += 'Option ' + LETTERS[i] + ': ' + opt + '. ';
+    });
+    speak(text, onEnd);
+  };
+  testAudio.load();
 }
 
 function speakExplanation(q, wasCorrect) {
@@ -449,6 +479,7 @@ function speakExplanation(q, wasCorrect) {
 
 function stopSpeech() {
   if (HAS_TTS) window.speechSynthesis.cancel();
+  stopAudio();
 }
 
 // Map spoken words to answer indices
@@ -974,19 +1005,14 @@ function renderQuiz(rootEl, state, actions) {
       speakBtn.appendChild(iconEl(ICON_SPEAKER));
       speakBtn.appendChild(document.createTextNode(' Read Aloud'));
       speakBtn.onclick = function () {
-        if (window.speechSynthesis.speaking) {
+        if (window.speechSynthesis.speaking || isAudioPlaying()) {
           stopSpeech();
           speakBtn.classList.remove('quiz-speak-btn--active');
         } else {
-          speakQuestion(q);
           speakBtn.classList.add('quiz-speak-btn--active');
-          // Remove active state when done
-          var checkDone = setInterval(function () {
-            if (!window.speechSynthesis.speaking) {
-              speakBtn.classList.remove('quiz-speak-btn--active');
-              clearInterval(checkDone);
-            }
-          }, 300);
+          speakQuestion(q, function () {
+            speakBtn.classList.remove('quiz-speak-btn--active');
+          });
         }
       };
       voiceBtns.push(speakBtn);
@@ -1286,12 +1312,7 @@ function hfReadQuestion(state, rootEl, actions) {
   state.hfState = 'speaking';
   renderHandsFree(rootEl, state, actions);
 
-  var text = q.scenario + '. ' + q.prompt + '. ';
-  q.options.forEach(function (opt, i) {
-    text += 'Option ' + LETTERS[i] + ': ' + opt + '. ';
-  });
-
-  speak(text, function () {
+  speakQuestion(q, function () {
     // Done speaking, start listening
     if (!state.hfActive) return;
     state.hfState = 'listening';
