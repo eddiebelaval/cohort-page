@@ -1449,7 +1449,8 @@ export async function mount(rootEl, ctx) {
           if (!state.hfActive) return;
           var q = state.hfQuestions[state.currentIndex];
 
-          if (cmd === 'answer' && state.hfState === 'listening') {
+          if (cmd === 'answer' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
+            stopSpeech(); // Interrupt immediately
             var correct = data === q.correct_index;
             state.answers[state.currentIndex] = {
               question_id: q.id,
@@ -1465,7 +1466,7 @@ export async function mount(rootEl, ctx) {
           } else if (cmd === 'repeat' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
             stopSpeech();
             hfReadQuestion(state, rootEl, actions);
-          } else if (cmd === 'skip') {
+          } else if (cmd === 'skip' || (cmd === 'skip' && state.hfState === 'answered')) {
             stopSpeech();
             state.currentIndex++;
             if (state.currentIndex >= state.hfQuestions.length) {
@@ -1641,7 +1642,8 @@ export async function mount(rootEl, ctx) {
             var q = state.hfQuestions[state.currentIndex];
             if (cmd === 'resume') { actions.hfResume(); }
             else if (cmd === 'stop') { actions.hfStop(); }
-            else if (cmd === 'answer' && state.hfState === 'listening') {
+            else if (cmd === 'answer' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
+              stopSpeech(); // Interrupt immediately
               var correct = data === q.correct_index;
               state.answers[state.currentIndex] = {
                 question_id: q.id, selected_index: data, correct_index: q.correct_index,
