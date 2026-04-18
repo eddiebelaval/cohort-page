@@ -451,6 +451,32 @@ function stopSpeech() {
   if (HAS_TTS) window.speechSynthesis.cancel();
 }
 
+// Map spoken words to answer indices
+function parseAnswerFromSpeech(transcript) {
+  var t = transcript.trim().toUpperCase();
+  // Direct letter match
+  var letterMatch = t.match(/\b([ABCD])\b/);
+  if (letterMatch) return LETTERS.indexOf(letterMatch[1]);
+  // Spoken letter names: "ay", "bee/be", "see/sea", "dee"
+  if (/\b(AY|EH|HEY)\b/.test(t)) return 0;
+  if (/\b(BEE?|BE)\b/.test(t)) return 1;
+  if (/\b(SEE|SEA|CEE)\b/.test(t)) return 2;
+  if (/\b(DEE|THE)\b/.test(t)) return 3;
+  // Number words: "one/first", "two/second", "three/third", "four/fourth"
+  if (/\b(ONE|1|FIRST|1ST)\b/.test(t)) return 0;
+  if (/\b(TWO|2|SECOND|2ND)\b/.test(t)) return 1;
+  if (/\b(THREE|3|THIRD|3RD)\b/.test(t)) return 2;
+  if (/\b(FOUR|4|FOURTH|4TH)\b/.test(t)) return 3;
+  // "option A", "answer B", "choice C"
+  var optMatch = t.match(/(?:OPTION|ANSWER|CHOICE|NUMBER)\s*([ABCD1-4])/);
+  if (optMatch) {
+    var v = optMatch[1];
+    if (v >= '1' && v <= '4') return parseInt(v) - 1;
+    return LETTERS.indexOf(v);
+  }
+  return -1;
+}
+
 function listenForAnswer(callback, onEnd) {
   var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!Recognition) return null;
@@ -459,9 +485,9 @@ function listenForAnswer(callback, onEnd) {
   rec.interimResults = false;
   rec.lang = 'en-US';
   rec.onresult = function (e) {
-    var transcript = e.results[0][0].transcript.trim().toUpperCase();
-    var match = transcript.match(/\b([ABCD])\b/);
-    if (match) callback(LETTERS.indexOf(match[1]));
+    var transcript = e.results[0][0].transcript;
+    var idx = parseAnswerFromSpeech(transcript);
+    if (idx >= 0) callback(idx);
   };
   rec.onend = function () { if (onEnd) onEnd(); };
   rec.onerror = function () { if (onEnd) onEnd(); };
@@ -494,16 +520,17 @@ function startContinuousListening(onCommand, onStateChange) {
   var stopped = false;
 
   rec.onresult = function (e) {
-    var transcript = e.results[0][0].transcript.trim().toUpperCase();
-    // Match answer letters
-    var letterMatch = transcript.match(/\b([ABCD])\b/);
-    if (letterMatch) { onCommand('answer', LETTERS.indexOf(letterMatch[1])); return; }
+    var transcript = e.results[0][0].transcript;
+    var t = transcript.trim().toUpperCase();
+    // Match answer letters (using robust parser)
+    var answerIdx = parseAnswerFromSpeech(transcript);
+    if (answerIdx >= 0) { onCommand('answer', answerIdx); return; }
     // Match navigation commands
-    if (/\b(REPEAT|AGAIN|SAY.*(AGAIN|THAT))\b/.test(transcript)) { onCommand('repeat'); return; }
-    if (/\b(SKIP|NEXT|PASS)\b/.test(transcript)) { onCommand('skip'); return; }
-    if (/\b(PAUSE|HOLD|WAIT)\b/.test(transcript)) { onCommand('pause'); return; }
-    if (/\b(RESUME|CONTINUE|GO|PLAY)\b/.test(transcript)) { onCommand('resume'); return; }
-    if (/\b(STOP|QUIT|END|EXIT|DONE)\b/.test(transcript)) { onCommand('stop'); return; }
+    if (/\b(REPEAT|AGAIN|SAY.*(AGAIN|THAT))\b/.test(t)) { onCommand('repeat'); return; }
+    if (/\b(SKIP|NEXT|PASS)\b/.test(t)) { onCommand('skip'); return; }
+    if (/\b(PAUSE|HOLD|WAIT)\b/.test(t)) { onCommand('pause'); return; }
+    if (/\b(RESUME|CONTINUE|GO|PLAY)\b/.test(t)) { onCommand('resume'); return; }
+    if (/\b(STOP|QUIT|END|EXIT|DONE)\b/.test(t)) { onCommand('stop'); return; }
   };
 
   rec.onend = function () {
