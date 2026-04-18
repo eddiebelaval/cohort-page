@@ -30,10 +30,12 @@ Questions belonging to a quiz. Multiple choice for v1.
 | id | uuid (PK) | `gen_random_uuid()` |
 | quiz_id | uuid (FK) | `references quizzes(id) on delete cascade` |
 | position | int | order within the quiz (1, 2, 3...) |
-| prompt | text | the question itself |
-| options | jsonb | array of strings: `["A answer", "B answer", ...]` |
+| domain | text | one of: `agentic_architecture`, `tool_design_mcp`, `claude_code_config`, `prompt_engineering`, `context_management` |
+| scenario | text | realistic production context (2-5 sentences, CCA-F exam style) |
+| prompt | text | the specific architectural question |
+| options | jsonb | array of 4 strings: `["A answer", "B answer", "C answer", "D answer"]` |
 | correct_index | int | 0-based index into `options` |
-| explanation | text | optional — shown after answer |
+| explanation | text | why correct answer is right + why each distractor fails |
 
 ### `quiz_attempts`
 A member's attempt at a quiz.
