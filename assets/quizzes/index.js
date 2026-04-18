@@ -715,10 +715,6 @@ function renderLanding(rootEl, state, actions) {
         el('button', { className: 'quiz-review-btn', onclick: function () { actions.reviewFromLanding(state.todayBest); } }, 'Review Answers'),
       ])
     );
-  } else {
-    children.push(
-      el('button', { className: 'quiz-start-btn', onclick: actions.start }, 'Start Daily Quiz (' + state.questions.length + ' questions)')
-    );
   }
 
   // Two mode cards
@@ -727,7 +723,7 @@ function renderLanding(rootEl, state, actions) {
   dailyCard.onclick = actions.start;
   dailyCard.appendChild(el('div', { className: 'quiz-mode-icon' }, '5'));
   dailyCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Daily Quiz'));
-  dailyCard.appendChild(el('div', { className: 'quiz-mode-desc' }, '5 questions \u00B7 streak tracking \u00B7 new set each day'));
+  dailyCard.appendChild(el('div', { className: 'quiz-mode-desc' }, state.questions.length + ' questions \u00B7 streak tracking \u00B7 new set each day'));
 
   var hfCard = document.createElement('div');
   hfCard.className = 'quiz-mode-card';
@@ -736,7 +732,7 @@ function renderLanding(rootEl, state, actions) {
   };
   hfCard.appendChild(el('div', { className: 'quiz-mode-icon' }, iconEl(ICON_MIC)));
   hfCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Hands-Free Practice'));
-  hfCard.appendChild(el('div', { className: 'quiz-mode-desc' }, 'All ' + state.allQuestions.length + ' questions \u00B7 voice-only \u00B7 great for commutes'));
+  hfCard.appendChild(el('div', { className: 'quiz-mode-desc' }, state.allQuestions.length + ' questions \u00B7 voice-only \u00B7 great for commutes'));
 
   children.push(el('div', { className: 'quiz-modes' }, [dailyCard, hfCard]));
 

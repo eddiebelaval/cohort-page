@@ -522,12 +522,13 @@
 .quiz-modes {
   display: flex;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-top: 24px;
+  margin-bottom: 20px;
 }
 
 .quiz-mode-card {
   flex: 1;
-  padding: 16px;
+  padding: 24px 16px;
   border: 2px solid var(--border);
   border-radius: 10px;
   background: var(--card-bg);
