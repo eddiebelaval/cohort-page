@@ -643,6 +643,7 @@ async function saveAttempt(supabase, memberId, quizId, answers, score, total) {
 // ── Local quiz stats (localStorage, works without Supabase) ──
 
 var STATS_KEY = 'quiz_stats';
+var SESSION_KEY = 'quiz_session';
 
 function loadStats() {
   try {
@@ -690,6 +691,45 @@ function recordQuizResult(answers) {
 
   saveStats(stats);
   return stats;
+}
+
+// ── Session persistence (resume where you left off) ──
+
+function saveSession(state) {
+  try {
+    var data = {
+      mode: state.view,                    // 'quiz' or 'handsfree'
+      currentIndex: state.currentIndex,
+      answers: state.answers,
+      answered: state.answered,
+      // Daily quiz: save the seed so we know if it's the same day
+      dailySeed: getDailySeed(),
+      // Hands-free: save question IDs in order so we can restore the exact sequence
+      hfQuestionIds: state.hfQuestions.map(function (q) { return q.id; }),
+      hfScore: state.hfScore,
+      hfTotal: state.hfTotal,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch (e) { /* full */ }
+}
+
+function loadSession() {
+  try {
+    var raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    var data = JSON.parse(raw);
+    // Expire sessions older than 24 hours
+    if (Date.now() - data.savedAt > 86400000) {
+      clearSession();
+      return null;
+    }
+    return data;
+  } catch (e) { return null; }
+}
+
+function clearSession() {
+  try { localStorage.removeItem(SESSION_KEY); } catch (e) { /* ok */ }
 }
 
 // ── State ──
@@ -1294,6 +1334,7 @@ export async function mount(rootEl, ctx) {
         correct: correct,
       };
       state.answered = true;
+      saveSession(state);
       renderQuiz(rootEl, state, actions);
     },
 
@@ -1301,6 +1342,7 @@ export async function mount(rootEl, ctx) {
       stopSpeech();
       state.currentIndex++;
       state.answered = false;
+      saveSession(state);
       renderQuiz(rootEl, state, actions);
     },
 
@@ -1309,8 +1351,9 @@ export async function mount(rootEl, ctx) {
       var score = state.answers.filter(function (a) { return a.correct; }).length;
       var total = state.answers.length;
       state.view = 'results';
-      // Track locally
+      // Track locally and clear saved session
       recordQuizResult(state.answers);
+      clearSession();
       renderResults(rootEl, state, actions);
 
       // Save attempt and fire streak
@@ -1376,6 +1419,7 @@ export async function mount(rootEl, ctx) {
             };
             state.hfTotal++;
             if (correct) state.hfScore++;
+            saveSession(state);
             hfReadFeedback(state, rootEl, actions, correct, q);
           } else if (cmd === 'repeat' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
             stopSpeech();
@@ -1420,6 +1464,7 @@ export async function mount(rootEl, ctx) {
       state.hfPaused = true;
       state.hfResumeState = state.hfState;
       state.hfState = 'paused';
+      saveSession(state);
       renderHandsFree(rootEl, state, actions);
       speak('Paused.');
     },
@@ -1453,9 +1498,10 @@ export async function mount(rootEl, ctx) {
       state.hfActive = false;
       if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
       state.hfState = 'finished';
-      // Track locally
+      // Track locally and clear saved session
       var answered = state.answers.filter(Boolean);
       if (answered.length > 0) recordQuizResult(answered);
+      clearSession();
       renderHandsFree(rootEl, state, actions);
 
       // Fire streak if at least one question answered
@@ -1518,6 +1564,71 @@ export async function mount(rootEl, ctx) {
       state.todayBest = todayAttempts.length > 0 ? todayAttempts[0] : null;
       state.recentAttempts = await fetchRecentAttempts(supabase, memberId, state.quizId);
     } catch (e) { /* proceed without history */ }
+  }
+
+  // Check for a saved session to resume
+  var saved = loadSession();
+  if (saved) {
+    if (saved.mode === 'quiz' && saved.dailySeed === getDailySeed() && saved.currentIndex < state.questions.length) {
+      // Resume daily quiz — same day, in progress
+      state.currentIndex = saved.currentIndex;
+      state.answers = saved.answers || [];
+      state.answered = saved.answered || false;
+      state.view = 'quiz';
+      renderQuiz(rootEl, state, actions);
+      return;
+    } else if (saved.mode === 'handsfree' && saved.hfQuestionIds && saved.hfQuestionIds.length > 0) {
+      // Resume hands-free — rebuild question order from saved IDs
+      var questionMap = {};
+      state.allQuestions.forEach(function (q) { questionMap[q.id] = q; });
+      var restored = saved.hfQuestionIds.map(function (id) { return questionMap[id]; }).filter(Boolean);
+      if (restored.length > 0 && saved.currentIndex < restored.length) {
+        state.hfQuestions = restored;
+        state.currentIndex = saved.currentIndex;
+        state.answers = saved.answers || [];
+        state.hfScore = saved.hfScore || 0;
+        state.hfTotal = saved.hfTotal || 0;
+        state.hfActive = true;
+        state.hfPaused = true;
+        state.hfState = 'paused';
+        state.view = 'handsfree';
+        renderHandsFree(rootEl, state, actions);
+        // Start continuous listening for resume command
+        state.hfListener = startContinuousListening(
+          function (cmd, data) {
+            if (!state.hfActive) return;
+            var q = state.hfQuestions[state.currentIndex];
+            if (cmd === 'resume') { actions.hfResume(); }
+            else if (cmd === 'stop') { actions.hfStop(); }
+            else if (cmd === 'answer' && state.hfState === 'listening') {
+              var correct = data === q.correct_index;
+              state.answers[state.currentIndex] = {
+                question_id: q.id, selected_index: data, correct_index: q.correct_index,
+                domain: q.domain, correct: correct,
+              };
+              state.hfTotal++;
+              if (correct) state.hfScore++;
+              saveSession(state);
+              hfReadFeedback(state, rootEl, actions, correct, q);
+            } else if (cmd === 'repeat' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
+              stopSpeech(); hfReadQuestion(state, rootEl, actions);
+            } else if (cmd === 'skip') {
+              stopSpeech();
+              state.currentIndex++;
+              if (state.currentIndex >= state.hfQuestions.length) {
+                state.hfState = 'finished'; state.hfActive = false;
+                if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
+                renderHandsFree(rootEl, state, actions);
+              } else { hfReadQuestion(state, rootEl, actions); }
+            } else if (cmd === 'pause') { actions.hfPause(); }
+          },
+          null
+        );
+        return;
+      }
+    }
+    // Saved session didn't match (different day, etc.) — clear it
+    clearSession();
   }
 
   state.view = 'landing';
