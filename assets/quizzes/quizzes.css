@@ -161,6 +161,28 @@
   padding: 24px 0;
 }
 
+.quiz-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.quiz-back-link {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.quiz-back-link:hover {
+  color: var(--ink);
+}
+
 .quiz-progress {
   display: flex;
   align-items: center;

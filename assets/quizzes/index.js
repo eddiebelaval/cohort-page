@@ -782,8 +782,11 @@ function renderQuiz(rootEl, state, actions) {
   });
 
   var children = [
-    el('div', { className: 'quiz-progress' }, [
+    el('div', { className: 'quiz-topbar' }, [
+      el('button', { className: 'quiz-back-link', onclick: actions.home }, '\u2190 Back'),
       el('span', { className: 'quiz-progress-label' }, 'Question ' + progress),
+    ]),
+    el('div', { className: 'quiz-progress' }, [
       el('div', { className: 'quiz-progress-track' }, [
         el('div', { className: 'quiz-progress-bar', style: 'width:' + pct + '%' }),
       ]),
