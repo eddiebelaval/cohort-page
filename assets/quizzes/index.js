@@ -482,6 +482,55 @@ function iconEl(svgStr) {
   return span;
 }
 
+// Continuous listening for hands-free mode
+function startContinuousListening(onCommand, onStateChange) {
+  var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) return null;
+
+  var rec = new Recognition();
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.lang = 'en-US';
+  var stopped = false;
+
+  rec.onresult = function (e) {
+    var transcript = e.results[0][0].transcript.trim().toUpperCase();
+    // Match answer letters
+    var letterMatch = transcript.match(/\b([ABCD])\b/);
+    if (letterMatch) { onCommand('answer', LETTERS.indexOf(letterMatch[1])); return; }
+    // Match navigation commands
+    if (/\b(REPEAT|AGAIN|SAY.*(AGAIN|THAT))\b/.test(transcript)) { onCommand('repeat'); return; }
+    if (/\b(SKIP|NEXT|PASS)\b/.test(transcript)) { onCommand('skip'); return; }
+    if (/\b(STOP|QUIT|END|EXIT|DONE)\b/.test(transcript)) { onCommand('stop'); return; }
+  };
+
+  rec.onend = function () {
+    // Auto-restart listening unless explicitly stopped
+    if (!stopped) {
+      try { rec.start(); } catch (e) { /* already started */ }
+    }
+  };
+
+  rec.onerror = function (e) {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      stopped = true;
+      if (onStateChange) onStateChange('denied');
+      return;
+    }
+    // For other errors (no-speech, network), auto-restart via onend
+  };
+
+  rec.start();
+  if (onStateChange) onStateChange('listening');
+
+  return {
+    stop: function () {
+      stopped = true;
+      try { rec.stop(); } catch (e) { /* not started */ }
+    }
+  };
+}
+
 // ── Seeded PRNG (mulberry32) ──
 
 function mulberry32(seed) {
@@ -605,6 +654,13 @@ function createState() {
     autoRead: false,         // auto-read questions aloud
     listening: false,        // STT active
     activeRec: null,         // SpeechRecognition instance
+    // Hands-free mode
+    hfActive: false,         // hands-free mode running
+    hfListener: null,        // continuous recognition handle
+    hfState: 'idle',         // idle | speaking | listening | answered
+    hfScore: 0,              // running score in hands-free
+    hfTotal: 0,              // questions answered in hands-free
+    hfQuestions: [],          // shuffled full question bank for hands-free
   };
 }
 
@@ -646,20 +702,6 @@ function renderLanding(rootEl, state, actions) {
     el('div', { className: 'quiz-domain-tags' }, tags),
   ];
 
-  // Voice toggle
-  if (HAS_TTS) {
-    var checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.checked = state.autoRead;
-    checkbox.onchange = function () { state.autoRead = checkbox.checked; };
-    var toggleLabel = document.createElement('label');
-    toggleLabel.className = 'quiz-voice-toggle';
-    toggleLabel.appendChild(checkbox);
-    toggleLabel.appendChild(iconEl(ICON_SPEAKER));
-    toggleLabel.appendChild(document.createTextNode(' Read questions aloud'));
-    children.push(toggleLabel);
-  }
-
   // Score summary if already taken today
   if (state.todayBest) {
     var pct = Math.round((state.todayBest.score / state.todayBest.total) * 100);
@@ -675,9 +717,28 @@ function renderLanding(rootEl, state, actions) {
     );
   } else {
     children.push(
-      el('button', { className: 'quiz-start-btn', onclick: actions.start }, 'Start Quiz (' + state.questions.length + ' questions)')
+      el('button', { className: 'quiz-start-btn', onclick: actions.start }, 'Start Daily Quiz (' + state.questions.length + ' questions)')
     );
   }
+
+  // Two mode cards
+  var dailyCard = document.createElement('div');
+  dailyCard.className = 'quiz-mode-card';
+  dailyCard.onclick = actions.start;
+  dailyCard.appendChild(el('div', { className: 'quiz-mode-icon' }, '5'));
+  dailyCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Daily Quiz'));
+  dailyCard.appendChild(el('div', { className: 'quiz-mode-desc' }, '5 questions \u00B7 streak tracking \u00B7 new set each day'));
+
+  var hfCard = document.createElement('div');
+  hfCard.className = 'quiz-mode-card';
+  hfCard.onclick = HAS_TTS && HAS_STT ? actions.hfStart : function () {
+    alert('Hands-free mode requires a browser with speech recognition support (Chrome, Safari, or Edge).');
+  };
+  hfCard.appendChild(el('div', { className: 'quiz-mode-icon' }, iconEl(ICON_MIC)));
+  hfCard.appendChild(el('div', { className: 'quiz-mode-name' }, 'Hands-Free Practice'));
+  hfCard.appendChild(el('div', { className: 'quiz-mode-desc' }, 'All ' + state.allQuestions.length + ' questions \u00B7 voice-only \u00B7 great for commutes'));
+
+  children.push(el('div', { className: 'quiz-modes' }, [dailyCard, hfCard]));
 
   // Previous results
   if (state.recentAttempts.length > 0) {
@@ -909,6 +970,133 @@ function renderReview(rootEl, state, actions) {
   );
 }
 
+// ── Hands-free view ──
+
+function renderHandsFree(rootEl, state, actions) {
+  var children = [];
+
+  if (state.hfState === 'finished') {
+    // Session complete
+    var pct = state.hfTotal > 0 ? Math.round((state.hfScore / state.hfTotal) * 100) : 0;
+    children = [
+      el('h3', { className: 'quiz-hf-status' }, 'Practice Complete'),
+      el('div', { className: 'quiz-hf-score' }, [
+        el('p', { className: 'quiz-hf-score-number' }, state.hfScore + ' / ' + state.hfTotal),
+        el('p', { className: 'quiz-score-label' }, pct + '% correct'),
+      ]),
+      el('button', { className: 'quiz-start-btn', onclick: actions.home, style: 'margin-top:20px' }, 'Back to Quiz Home'),
+    ];
+  } else {
+    var q = state.hfQuestions[state.currentIndex];
+    var progress = (state.currentIndex + 1) + ' of ' + state.hfQuestions.length;
+
+    // Status indicator
+    var statusCls = 'quiz-hf-listening';
+    var statusText = '';
+    if (state.hfState === 'speaking') {
+      statusCls += ' quiz-hf-listening--speaking';
+      statusText = 'Speaking...';
+    } else if (state.hfState === 'listening') {
+      statusCls += ' quiz-hf-listening--active';
+      statusText = 'Listening...';
+    } else if (state.hfState === 'answered') {
+      statusCls += ' quiz-hf-listening--waiting';
+      statusText = 'Next question loading...';
+    } else {
+      statusCls += ' quiz-hf-listening--waiting';
+      statusText = 'Starting...';
+    }
+
+    children.push(
+      el('p', { className: 'quiz-hf-progress' }, 'Question ' + progress),
+      el('span', { className: 'quiz-question-domain' }, DOMAINS[q.domain] ? DOMAINS[q.domain].label : q.domain),
+      el('div', { className: statusCls }, statusText)
+    );
+
+    // Show result feedback if answered
+    if (state.hfState === 'answered' && state.answers[state.currentIndex]) {
+      var a = state.answers[state.currentIndex];
+      children.push(
+        el('p', {
+          className: 'quiz-hf-result ' + (a.correct ? 'quiz-hf-result--correct' : 'quiz-hf-result--incorrect')
+        }, a.correct ? 'Correct!' : 'Incorrect — answer was ' + LETTERS[q.correct_index])
+      );
+    }
+
+    // Scenario and question (visible for glancing, but main interaction is audio)
+    children.push(
+      el('div', { className: 'quiz-scenario', style: 'text-align:left;font-size:13px;margin-top:16px' }, q.scenario),
+      el('p', { className: 'quiz-prompt', style: 'text-align:left;font-size:14px' }, q.prompt)
+    );
+
+    // Voice command hints
+    children.push(
+      el('div', { className: 'quiz-hf-commands' }, [
+        el('strong', null, 'Voice commands: '),
+        document.createTextNode('Say '),
+        el('strong', null, 'A, B, C, D'),
+        document.createTextNode(' to answer  •  '),
+        el('strong', null, 'repeat'),
+        document.createTextNode(' to hear again  •  '),
+        el('strong', null, 'skip'),
+        document.createTextNode(' to pass  •  '),
+        el('strong', null, 'stop'),
+        document.createTextNode(' to end'),
+      ])
+    );
+
+    // Stop button (manual fallback)
+    children.push(
+      el('button', { className: 'quiz-hf-stop-btn', onclick: actions.hfStop }, 'Stop Practice')
+    );
+  }
+
+  rootEl.replaceChildren(el('div', { className: 'quiz-handsfree' }, children));
+}
+
+// ── Hands-free flow controller ──
+
+function hfReadQuestion(state, rootEl, actions) {
+  var q = state.hfQuestions[state.currentIndex];
+  state.hfState = 'speaking';
+  renderHandsFree(rootEl, state, actions);
+
+  var text = q.scenario + '. ' + q.prompt + '. ';
+  q.options.forEach(function (opt, i) {
+    text += 'Option ' + LETTERS[i] + ': ' + opt + '. ';
+  });
+
+  speak(text, function () {
+    // Done speaking, start listening
+    if (!state.hfActive) return;
+    state.hfState = 'listening';
+    renderHandsFree(rootEl, state, actions);
+  });
+}
+
+function hfReadFeedback(state, rootEl, actions, correct, q) {
+  state.hfState = 'answered';
+  renderHandsFree(rootEl, state, actions);
+
+  var prefix = correct ? 'Correct! ' : 'Incorrect. The correct answer is ' + LETTERS[q.correct_index] + '. ';
+  var text = prefix + (q.explanation || '');
+
+  speak(text, function () {
+    if (!state.hfActive) return;
+    // Auto-advance after a brief pause
+    setTimeout(function () {
+      if (!state.hfActive) return;
+      state.currentIndex++;
+      if (state.currentIndex >= state.hfQuestions.length) {
+        state.hfState = 'finished';
+        renderHandsFree(rootEl, state, actions);
+      } else {
+        hfReadQuestion(state, rootEl, actions);
+      }
+    }, 800);
+  });
+}
+
 // ── Entry point ──
 
 export async function mount(rootEl, ctx) {
@@ -987,8 +1175,95 @@ export async function mount(rootEl, ctx) {
       renderReview(rootEl, state, actions);
     },
 
+    // ── Hands-free mode actions ──
+
+    hfStart: function () {
+      stopSpeech();
+      if (state.activeRec) { state.activeRec.stop(); state.activeRec = null; }
+
+      // Shuffle all questions for practice
+      var rng = mulberry32(Date.now());
+      state.hfQuestions = shuffle(state.allQuestions, rng);
+      state.currentIndex = 0;
+      state.answers = [];
+      state.hfScore = 0;
+      state.hfTotal = 0;
+      state.hfActive = true;
+      state.hfState = 'idle';
+      state.view = 'handsfree';
+
+      renderHandsFree(rootEl, state, actions);
+
+      // Start continuous listening
+      state.hfListener = startContinuousListening(
+        function (cmd, data) {
+          if (!state.hfActive) return;
+          var q = state.hfQuestions[state.currentIndex];
+
+          if (cmd === 'answer' && state.hfState === 'listening') {
+            var correct = data === q.correct_index;
+            state.answers[state.currentIndex] = {
+              question_id: q.id,
+              selected_index: data,
+              correct_index: q.correct_index,
+              domain: q.domain,
+              correct: correct,
+            };
+            state.hfTotal++;
+            if (correct) state.hfScore++;
+            hfReadFeedback(state, rootEl, actions, correct, q);
+          } else if (cmd === 'repeat' && (state.hfState === 'listening' || state.hfState === 'speaking')) {
+            stopSpeech();
+            hfReadQuestion(state, rootEl, actions);
+          } else if (cmd === 'skip') {
+            stopSpeech();
+            state.currentIndex++;
+            if (state.currentIndex >= state.hfQuestions.length) {
+              state.hfState = 'finished';
+              state.hfActive = false;
+              if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
+              renderHandsFree(rootEl, state, actions);
+            } else {
+              hfReadQuestion(state, rootEl, actions);
+            }
+          } else if (cmd === 'stop') {
+            actions.hfStop();
+          }
+        },
+        function (listenState) {
+          if (listenState === 'denied') {
+            state.hfActive = false;
+            state.hfState = 'finished';
+            renderHandsFree(rootEl, state, actions);
+          }
+        }
+      );
+
+      // Announce start and read first question
+      speak('Starting hands-free practice. ' + state.hfQuestions.length + ' questions. Say A, B, C, or D to answer. Say repeat, skip, or stop.', function () {
+        if (!state.hfActive) return;
+        hfReadQuestion(state, rootEl, actions);
+      });
+    },
+
+    hfStop: function () {
+      stopSpeech();
+      state.hfActive = false;
+      if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
+      state.hfState = 'finished';
+      renderHandsFree(rootEl, state, actions);
+
+      // Fire streak if at least one question answered
+      if (state.hfTotal > 0 && supabase && memberId) {
+        ctx.onActivity('quiz').catch(function () {});
+      }
+    },
+
     home: async function () {
       stopSpeech();
+      // Stop hands-free if running
+      state.hfActive = false;
+      if (state.hfListener) { state.hfListener.stop(); state.hfListener = null; }
       // Refresh today's attempts
       if (supabase && memberId && state.quizId) {
         try {
