@@ -417,6 +417,71 @@ const FALLBACK_QUESTIONS = [
   },
 ];
 
+// ── Voice utilities (Web Speech API) ──
+
+var HAS_TTS = 'speechSynthesis' in window;
+var HAS_STT = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
+function speak(text, onEnd) {
+  if (!HAS_TTS) return;
+  window.speechSynthesis.cancel();
+  var utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.95;
+  utterance.pitch = 1.0;
+  if (onEnd) utterance.onend = onEnd;
+  window.speechSynthesis.speak(utterance);
+}
+
+function speakQuestion(q) {
+  if (!HAS_TTS) return;
+  var text = q.scenario + '. ' + q.prompt + '. ';
+  q.options.forEach(function (opt, i) {
+    text += 'Option ' + LETTERS[i] + ': ' + opt + '. ';
+  });
+  speak(text);
+}
+
+function speakExplanation(q, wasCorrect) {
+  if (!HAS_TTS) return;
+  var prefix = wasCorrect ? 'Correct! ' : 'Incorrect. The correct answer is ' + LETTERS[q.correct_index] + '. ';
+  speak(prefix + (q.explanation || ''));
+}
+
+function stopSpeech() {
+  if (HAS_TTS) window.speechSynthesis.cancel();
+}
+
+function listenForAnswer(callback, onEnd) {
+  var Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) return null;
+  var rec = new Recognition();
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.lang = 'en-US';
+  rec.onresult = function (e) {
+    var transcript = e.results[0][0].transcript.trim().toUpperCase();
+    var match = transcript.match(/\b([ABCD])\b/);
+    if (match) callback(LETTERS.indexOf(match[1]));
+  };
+  rec.onend = function () { if (onEnd) onEnd(); };
+  rec.onerror = function () { if (onEnd) onEnd(); };
+  rec.start();
+  return rec;
+}
+
+// SVG icons (inline, no external deps)
+var ICON_SPEAKER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>';
+var ICON_MIC = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>';
+var ICON_STOP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+
+function iconEl(svgStr) {
+  var span = document.createElement('span');
+  span.innerHTML = svgStr;
+  span.style.display = 'inline-flex';
+  span.style.alignItems = 'center';
+  return span;
+}
+
 // ── Seeded PRNG (mulberry32) ──
 
 function mulberry32(seed) {
@@ -537,6 +602,9 @@ function createState() {
     answered: false,        // has current question been answered
     todayBest: null,        // best attempt today
     recentAttempts: [],
+    autoRead: false,         // auto-read questions aloud
+    listening: false,        // STT active
+    activeRec: null,         // SpeechRecognition instance
   };
 }
 
@@ -577,6 +645,20 @@ function renderLanding(rootEl, state, actions) {
     ]),
     el('div', { className: 'quiz-domain-tags' }, tags),
   ];
+
+  // Voice toggle
+  if (HAS_TTS) {
+    var checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = state.autoRead;
+    checkbox.onchange = function () { state.autoRead = checkbox.checked; };
+    var toggleLabel = document.createElement('label');
+    toggleLabel.className = 'quiz-voice-toggle';
+    toggleLabel.appendChild(checkbox);
+    toggleLabel.appendChild(iconEl(ICON_SPEAKER));
+    toggleLabel.appendChild(document.createTextNode(' Read questions aloud'));
+    children.push(toggleLabel);
+  }
 
   // Score summary if already taken today
   if (state.todayBest) {
@@ -655,6 +737,68 @@ function renderQuiz(rootEl, state, actions) {
     el('div', { className: 'quiz-options' }, optionEls),
   ];
 
+  // Voice controls (speaker + mic)
+  if (HAS_TTS || HAS_STT) {
+    var voiceBtns = [];
+
+    if (HAS_TTS) {
+      var speakBtn = document.createElement('button');
+      speakBtn.className = 'quiz-speak-btn';
+      speakBtn.appendChild(iconEl(ICON_SPEAKER));
+      speakBtn.appendChild(document.createTextNode(' Read Aloud'));
+      speakBtn.onclick = function () {
+        if (window.speechSynthesis.speaking) {
+          stopSpeech();
+          speakBtn.classList.remove('quiz-speak-btn--active');
+        } else {
+          speakQuestion(q);
+          speakBtn.classList.add('quiz-speak-btn--active');
+          // Remove active state when done
+          var checkDone = setInterval(function () {
+            if (!window.speechSynthesis.speaking) {
+              speakBtn.classList.remove('quiz-speak-btn--active');
+              clearInterval(checkDone);
+            }
+          }, 300);
+        }
+      };
+      voiceBtns.push(speakBtn);
+    }
+
+    if (HAS_STT && !state.answered) {
+      var micBtn = document.createElement('button');
+      micBtn.className = 'quiz-mic-btn' + (state.listening ? ' quiz-mic-btn--active' : '');
+      micBtn.appendChild(iconEl(state.listening ? ICON_STOP : ICON_MIC));
+      micBtn.appendChild(document.createTextNode(state.listening ? ' Listening...' : ' Answer by Voice'));
+      micBtn.onclick = function () {
+        if (state.listening && state.activeRec) {
+          state.activeRec.stop();
+          state.listening = false;
+          state.activeRec = null;
+          renderQuiz(rootEl, state, actions);
+        } else {
+          state.listening = true;
+          renderQuiz(rootEl, state, actions);
+          state.activeRec = listenForAnswer(
+            function (index) {
+              state.listening = false;
+              state.activeRec = null;
+              actions.answer(index);
+            },
+            function () {
+              state.listening = false;
+              state.activeRec = null;
+              renderQuiz(rootEl, state, actions);
+            }
+          );
+        }
+      };
+      voiceBtns.push(micBtn);
+    }
+
+    children.push(el('div', { className: 'quiz-voice-controls' }, voiceBtns));
+  }
+
   if (state.answered) {
     if (q.explanation) {
       children.push(el('div', { className: 'quiz-explanation' }, q.explanation));
@@ -666,9 +810,20 @@ function renderQuiz(rootEl, state, actions) {
         onclick: isLast ? actions.finish : actions.next,
       }, isLast ? 'See Results' : 'Next Question')
     );
+
+    // Auto-read explanation
+    if (state.autoRead && q.explanation) {
+      var wasCorrect = state.answers[state.currentIndex] && state.answers[state.currentIndex].correct;
+      speakExplanation(q, wasCorrect);
+    }
   }
 
   rootEl.replaceChildren(el('div', { className: 'quiz-active' }, children));
+
+  // Auto-read question on render (only for fresh questions, not after answering)
+  if (state.autoRead && !state.answered) {
+    speakQuestion(q);
+  }
 }
 
 function renderResults(rootEl, state, actions) {
@@ -764,6 +919,9 @@ export async function mount(rootEl, ctx) {
   // Actions object — closures over state & rootEl
   var actions = {
     start: function () {
+      stopSpeech();
+      if (state.activeRec) { state.activeRec.stop(); state.activeRec = null; }
+      state.listening = false;
       state.currentIndex = 0;
       state.answers = [];
       state.answered = false;
@@ -772,6 +930,9 @@ export async function mount(rootEl, ctx) {
     },
 
     answer: function (selectedIndex) {
+      stopSpeech();
+      if (state.activeRec) { state.activeRec.stop(); state.activeRec = null; }
+      state.listening = false;
       var q = state.questions[state.currentIndex];
       var correct = selectedIndex === q.correct_index;
       state.answers[state.currentIndex] = {
@@ -786,12 +947,14 @@ export async function mount(rootEl, ctx) {
     },
 
     next: function () {
+      stopSpeech();
       state.currentIndex++;
       state.answered = false;
       renderQuiz(rootEl, state, actions);
     },
 
     finish: async function () {
+      stopSpeech();
       var score = state.answers.filter(function (a) { return a.correct; }).length;
       var total = state.answers.length;
       state.view = 'results';
@@ -809,11 +972,13 @@ export async function mount(rootEl, ctx) {
     },
 
     review: function () {
+      stopSpeech();
       state.view = 'review';
       renderReview(rootEl, state, actions);
     },
 
     reviewFromLanding: function (attempt) {
+      stopSpeech();
       // Reconstruct answers from the saved attempt for review
       if (attempt && attempt.answers) {
         state.answers = attempt.answers;
@@ -823,6 +988,7 @@ export async function mount(rootEl, ctx) {
     },
 
     home: async function () {
+      stopSpeech();
       // Refresh today's attempts
       if (supabase && memberId && state.quizId) {
         try {
