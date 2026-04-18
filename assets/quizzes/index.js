@@ -1274,18 +1274,6 @@ function renderHandsFree(rootEl, state, actions) {
 
   // Voice command hints
   children.push(
-    el('div', { className: 'quiz-hf-commands' }, [
-      el('strong', null, 'Say: '),
-      el('strong', null, 'A, B, C, D'),
-      document.createTextNode(' answer  \u00B7  '),
-      el('strong', null, 'repeat'),
-      document.createTextNode('  \u00B7  '),
-      el('strong', null, 'skip'),
-      document.createTextNode('  \u00B7  '),
-      el('strong', null, 'pause'),
-      document.createTextNode('  \u00B7  '),
-      el('strong', null, 'stop'),
-    ])
   );
 
   rootEl.replaceChildren(el('div', { className: 'quiz-handsfree' }, children));
