@@ -1482,11 +1482,8 @@ export async function mount(rootEl, ctx) {
         }
       );
 
-      // Announce start and read first question
-      speak('Starting hands-free practice. ' + state.hfQuestions.length + ' questions. Say A, B, C, or D to answer. Say repeat, skip, or stop.', function () {
-        if (!state.hfActive) return;
-        hfReadQuestion(state, rootEl, actions);
-      });
+      // Start reading the first question immediately
+      hfReadQuestion(state, rootEl, actions);
     },
 
     hfPause: function () {
