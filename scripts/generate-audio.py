@@ -208,7 +208,7 @@ def main():
                 size = os.path.getsize(output_path)
                 print(f"    OK ({size:,} bytes)")
             else:
-                print(f"    FAILED")
+                print("    FAILED")
                 failed += 1
             done += 1
             # Rate limit: ElevenLabs allows ~2-3 req/sec on most plans
