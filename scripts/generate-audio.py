@@ -163,12 +163,16 @@ def generate_audio(text, output_path):
         body = e.read().decode('utf-8', errors='replace')
         print(f"  HTTP {e.code}: {body[:200]}")
         return False
-    except Exception as e:
+    except (urllib.error.URLError, OSError) as e:
         print(f"  Error: {e}")
         return False
 
 
 def main():
+    if not API_KEY:
+        print("Error: ELEVENLABS_API_KEY environment variable not set")
+        sys.exit(1)
+
     print("Parsing seed.sql...")
     questions = parse_seed_sql(SEED_SQL)
     print(f"Found {len(questions)} questions")
