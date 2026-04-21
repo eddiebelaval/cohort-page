@@ -453,8 +453,9 @@ function isAudioPlaying() {
 }
 
 function speakQuestion(q, onEnd) {
-  // Try pre-recorded audio first
-  var audioSrc = './assets/quizzes/audio/' + q.id + '.mp3';
+  // Try pre-recorded audio first (audio_id for DB questions, id for fallback)
+  var aid = q.audio_id || q.id;
+  var audioSrc = './assets/quizzes/audio/' + aid + '.mp3';
   var testAudio = new Audio(audioSrc);
   testAudio.oncanplaythrough = function () {
     playAudio(audioSrc, onEnd);
@@ -472,8 +473,9 @@ function speakQuestion(q, onEnd) {
 }
 
 function speakExplanation(q, wasCorrect, onEnd) {
+  var aid = q.audio_id || q.id;
   var suffix = wasCorrect ? '-correct' : '-incorrect';
-  var audioSrc = './assets/quizzes/audio/' + q.id + suffix + '.mp3';
+  var audioSrc = './assets/quizzes/audio/' + aid + suffix + '.mp3';
   var testAudio = new Audio(audioSrc);
   testAudio.oncanplaythrough = function () {
     playAudio(audioSrc, onEnd);
@@ -662,7 +664,7 @@ async function fetchQuestionPool(supabase) {
 
   var { data: questions } = await supabase
     .from('quiz_questions')
-    .select('id, domain, scenario, prompt, options, correct_index, explanation')
+    .select('id, audio_id, domain, scenario, prompt, options, correct_index, explanation')
     .eq('quiz_id', quiz.id)
     .order('position');
 

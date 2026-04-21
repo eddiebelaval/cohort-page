@@ -36,6 +36,7 @@ Questions belonging to a quiz. Multiple choice for v1.
 | options | jsonb | array of 4 strings: `["A answer", "B answer", "C answer", "D answer"]` |
 | correct_index | int | 0-based index into `options` |
 | explanation | text | why correct answer is right + why each distractor fails |
+| audio_id | text | stable ID for pre-recorded audio files (e.g. `fb-1`, `db-2`), nullable — falls back to browser TTS |
 
 ### `quiz_attempts`
 A member's attempt at a quiz.
