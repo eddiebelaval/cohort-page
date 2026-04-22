@@ -24,6 +24,7 @@ No password, no install, works on any device. Your progress follows you.
 
 ### What you get
 
+- **For Beginners (optional)** — curated foundational Anthropic lessons that help if you're new to Claude. See `content/beginners.md` for the curated list. Skip if you already have the basics.
 - **Per-member hub** — your curriculum progress (43 items across 6 courses), notes, bookmarks, streak
 - **Community heatmap** — GitHub-style grid of who was active each day
 - **Pro Tip of the Day** — 90 days of rotated study material

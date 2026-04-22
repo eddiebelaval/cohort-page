@@ -69,7 +69,7 @@ If one of those is missing, the work is still in progress.
 
 Cohort Hub succeeds in the near term if a cohort member can:
 
-- Sign up with an email, land in their hub, and understand what to do next without a nudge from Eddie,
+- Sign up with an email, land in their hub, and understand what to do next without a nudge from Eddie — new members who are Claude-unfamiliar have the optional "For Beginners" track (see `content/beginners.md`) as their onramp; advanced members skip it and go straight to the main curriculum,
 - Return 5 days a week for 3 weeks without losing their streak,
 - Pass the CCA exam *at least partly because* the hub kept them coming back.
 

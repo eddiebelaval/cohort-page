@@ -814,6 +814,64 @@
   @media (max-width: 600px) {
     .wa-banner { font-size: 13px; padding: 12px 48px 12px 16px; gap: 8px; }
   }
+
+  /* For Beginners (optional) onramp track */
+  .beginners-block {
+    margin: 24px 0 28px;
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fafafa;
+  }
+  .beginners-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .beginners-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .beginners-title { font-weight: 600; font-size: 14px; color: var(--ink); }
+  .beginners-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: white;
+    white-space: nowrap;
+  }
+  .beginners-badge.done { color: var(--green); border-color: var(--green); }
+  .beginners-toggle { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .beginners-intro { font-size: 12px; color: var(--muted); margin: 10px 0 14px; line-height: 1.55; }
+  .beginners-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+  }
+  .beginners-item:first-of-type { border-top: none; padding-top: 4px; }
+  .beginners-item-body { flex: 1; min-width: 0; }
+  .beginners-item-title { font-size: 14px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+  .beginners-item-title a { color: var(--ink); text-decoration: none; transition: color 0.15s; }
+  .beginners-item-title a:hover { color: var(--accent); }
+  .beginners-item-desc { font-size: 12px; color: var(--muted); margin-top: 3px; line-height: 1.45; }
+  .beginners-collapsed .beginners-body { display: none; }
+  @media (max-width: 600px) {
+    .beginners-block { padding: 14px 16px; }
+    .beginners-item-title { font-size: 13px; }
+  }
 </style>
 </head>
 <body>
@@ -1204,7 +1262,24 @@
     ]}
   ];
 
+  // For Beginners (optional) -- curated foundational Anthropic material for members new to Claude.
+  // NOT included in CURRICULUM -- progress here does NOT count toward cert completion %.
+  // Swap these lessons to match whatever set Eddie wants mirrored.
+  var BEGINNERS_COURSE = {
+    course: 'For Beginners (Optional)',
+    subtitle: 'Curated Anthropic lessons for members new to Claude. Skip if you already have the basics.',
+    items: [
+      { key: 'beginners-meet-claude', label: 'Meet Claude', desc: 'What Claude is and how it is different.', url: 'https://www.anthropic.com/claude' },
+      { key: 'beginners-ai-fluency-intro', label: 'AI Fluency: Framework and Foundations (Intro lesson)', desc: 'The AI fluency framework the cert assumes you know.', url: 'https://anthropic.skilljar.com/ai-fluency-framework-foundations' },
+      { key: 'beginners-prompt-eng-basics', label: 'Prompt Engineering Overview', desc: 'How to talk to Claude effectively.', url: 'https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/overview' },
+      { key: 'beginners-api-getting-started', label: 'API -- Your First Call', desc: 'Authenticate, make a request, parse a response.', url: 'https://docs.claude.com/en/api/getting-started' },
+      { key: 'beginners-claude-code-overview', label: 'Claude Code -- Overview', desc: 'Install, authenticate, first example.', url: 'https://docs.claude.com/en/docs/claude-code/overview' },
+      { key: 'beginners-tool-use-basics', label: 'Tool Use Basics', desc: 'What function calling is and how Claude does it.', url: 'https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview' }
+    ]
+  };
+
   // Combined curriculum (all courses, used for checklists and progress tracking)
+  // BEGINNERS_COURSE is intentionally excluded -- optional prerequisite material, not cert credit.
   var CURRICULUM = CPN_COURSES.concat(CERT_COURSES);
 
   // Pro Tips -- sourced from course material
@@ -2095,6 +2170,60 @@
       });
   }
 
+  function renderBeginnersTrack(container, memberId, isOwner) {
+    var totalItems = BEGINNERS_COURSE.items.length;
+    var doneItems = BEGINNERS_COURSE.items.filter(function(i) { return isItemDone(memberId, i.key); }).length;
+    var collapsed = localStorage.getItem('beginners-collapsed') === '1';
+
+    var block = el('div', { className: 'beginners-block' + (collapsed ? ' beginners-collapsed' : '') });
+
+    var badgeClass = (doneItems === totalItems && totalItems > 0) ? 'beginners-badge done' : 'beginners-badge';
+    var badgeText = (doneItems === totalItems && totalItems > 0) ? 'Complete' : (doneItems > 0 ? doneItems + ' / ' + totalItems : 'Foundational');
+
+    var titleGroup = el('div', { className: 'beginners-header-left' }, [
+      el('span', { className: 'beginners-title' }, BEGINNERS_COURSE.course),
+      el('span', { className: badgeClass }, badgeText)
+    ]);
+    var toggleBtn = el('span', { className: 'beginners-toggle' }, collapsed ? 'Show' : 'Hide');
+
+    var header = el('div', { className: 'beginners-header' });
+    header.appendChild(titleGroup);
+    header.appendChild(toggleBtn);
+    header.onclick = function() {
+      block.classList.toggle('beginners-collapsed');
+      var nowCollapsed = block.classList.contains('beginners-collapsed');
+      localStorage.setItem('beginners-collapsed', nowCollapsed ? '1' : '0');
+      toggleBtn.textContent = nowCollapsed ? 'Show' : 'Hide';
+    };
+    block.appendChild(header);
+
+    var body = el('div', { className: 'beginners-body' });
+    body.appendChild(el('div', { className: 'beginners-intro' }, BEGINNERS_COURSE.subtitle + ' Progress here does not count toward the cert curriculum below.'));
+
+    BEGINNERS_COURSE.items.forEach(function(item) {
+      var isDone = isItemDone(memberId, item.key);
+      var checkNode = el('div', { className: 'check' + (isDone ? ' done' : '') + (isOwner ? '' : ' readonly'), style: 'margin-top:2px;' });
+      if (isDone) checkNode.textContent = '\u2713';
+      if (isOwner) {
+        checkNode.onclick = function(e) { e.stopPropagation(); toggleItem(item.key); };
+      }
+
+      var titleLink = el('a', { href: item.url, target: '_blank', rel: 'noopener' }, item.label);
+      titleLink.onclick = function(e) { e.stopPropagation(); };
+
+      body.appendChild(el('div', { className: 'beginners-item' }, [
+        checkNode,
+        el('div', { className: 'beginners-item-body' }, [
+          el('div', { className: 'beginners-item-title' }, [titleLink]),
+          el('div', { className: 'beginners-item-desc' }, item.desc)
+        ])
+      ]));
+    });
+
+    block.appendChild(body);
+    container.appendChild(block);
+  }
+
   function renderCourseBlock(container, course, memberId, isOwner) {
     var completedCount = course.items.filter(function(item) { return isItemDone(memberId, item.key); }).length;
     var badgeClass, badgeText;
@@ -2286,6 +2415,9 @@
     container.appendChild(bluf);
 
     container.appendChild(renderHeatmap(heatmap, 'Activity (4 Weeks)', false));
+
+    // For Beginners (optional) -- curated foundational Anthropic lessons, doesn't count toward cert %
+    renderBeginnersTrack(container, memberId, isOwner);
 
     // Curriculum -- CPN Learning Path
     container.appendChild(el('div', { className: 'section-label', style: 'margin-top:28px;' }, 'CPN Learning Path'));
