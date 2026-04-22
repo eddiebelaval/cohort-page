@@ -82,6 +82,7 @@ Within 48 hours the cohort filled and the cap came off — people kept asking to
 | 2026-04-16 | Extract features to `assets/<feature>/` ES modules | `index.html` past 2,500 lines; new features need their own surface | Keep inline — rejected because quizzes was the breaking straw |
 | 2026-04-16 | Disable squash merging | Preserves contributor authorship on the changelog badge system | Keep squash — rejected because Allie's badge would never appear |
 | 2026-04-16 | Contributors registry (`contributors.json`) over git-alias-based detection | Explicit, inspectable, color-controllable | Hash-based auto-coloring — rejected because explicit beats clever |
+| 2026-04-21 | Optional "For Beginners" onramp track above the main tracker | Members arriving new to Claude had no curated prerequisite path. De facto onramp was WhatsApp, contradicting VISION's "understand what to do next without a nudge from Eddie" success line. The new track mirrors foundational Anthropic lessons 1:1; skippable for experienced members; progress doesn't count toward cert % | A mandatory intro module — rejected because skill levels vary widely. A separate page — rejected because hub is where members return daily |
 
 ---
 
