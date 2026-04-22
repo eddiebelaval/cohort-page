@@ -5,6 +5,11 @@
       "display": "Eddie",
       "github": "eddiebelaval",
       "color": "var(--accent)"
+    },
+    "allie.jones": {
+      "display": "Allie",
+      "github": "allierays",
+      "color": "#7c3aed"
     }
   },
   "_fallback": {
