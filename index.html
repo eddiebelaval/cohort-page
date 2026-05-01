@@ -39,7 +39,12 @@
 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--paper);
+    /* Layered paper: warm radial tint + horizontal fiber grain + base paper tone */
+    background:
+      radial-gradient(ellipse 95% 70% at 50% 25%, rgba(255, 251, 244, 0.55) 0%, rgba(255, 251, 244, 0) 60%),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2 0.12' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='0.05'/%3E%3C/svg%3E"),
+      var(--paper);
+    background-attachment: fixed, fixed, fixed;
     color: var(--ink);
     min-height: 100vh;
     overflow-x: hidden;
@@ -48,13 +53,24 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Fine-grain noise overlay sitting above content (very subtle, ~7%) */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");
     pointer-events: none;
     z-index: 100;
+  }
+
+  /* Soft warm vignette — corners darken slightly, center stays lit */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(60, 30, 10, 0.06) 100%);
+    pointer-events: none;
+    z-index: 99;
   }
 
   .container {
@@ -72,7 +88,71 @@
   }
 
   /* ═══════════════════════════════════════════
-     HAMBURGER NAV — Mobile-optimized (owner: @allierays)
+     EDITORIAL MASTHEAD — Top-of-page setting
+     ═══════════════════════════════════════════ */
+  .masthead {
+    position: relative;
+    z-index: 80;
+    text-align: center;
+    padding: 16px 24px 22px;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+  }
+
+  .masthead-rail {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .masthead-rail .rail-dot {
+    color: var(--border);
+    font-weight: 400;
+  }
+
+  .masthead-main {
+    padding-top: 16px;
+  }
+
+  .masthead-wordmark {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 5.5vw, 40px);
+    font-weight: 400;
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    display: inline-block;
+  }
+
+  .masthead-wordmark .ampersand {
+    color: var(--accent);
+    font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .masthead { padding: 12px 16px 18px; }
+    .masthead-rail {
+      font-size: 9px;
+      letter-spacing: 1.6px;
+      gap: 8px;
+      padding-bottom: 10px;
+    }
+    .masthead-rail .rail-hide-mobile { display: none; }
+    .masthead-main { padding-top: 12px; }
+  }
+
+  /* ═══════════════════════════════════════════
+     STICKY NAV — Slimmer wordmark, takes over after scroll
      ═══════════════════════════════════════════ */
   .site-nav {
     position: sticky;
@@ -84,14 +164,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 52px;
+    height: 48px;
   }
 
   .site-nav-brand {
     font-family: 'DM Serif Display', serif;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--ink);
     text-decoration: none;
+    letter-spacing: -0.2px;
   }
 
   .hamburger {
@@ -705,8 +786,128 @@
   .notes-readonly { padding: 16px 0; font-size: 14px; line-height: 1.7; color: #555; min-height: 40px; white-space: pre-wrap; }
   .notes-empty { color: var(--muted); font-style: italic; }
 
+  /* ═══════════════════════════════════════════
+     COLOPHON — Editorial sign-off (mirror to masthead)
+     ═══════════════════════════════════════════ */
+  .colophon {
+    position: relative;
+    z-index: 80;
+    text-align: center;
+    padding: 56px 24px 72px;
+    border-top: 1px solid var(--border);
+    margin-top: 56px;
+    background: transparent;
+  }
+
+  .colophon-ornament {
+    font-size: 16px;
+    color: var(--accent);
+    letter-spacing: 10px;
+    margin-bottom: 18px;
+    margin-left: 10px;
+    line-height: 1;
+  }
+
+  .colophon-wordmark {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 3.5vw, 28px);
+    color: var(--ink);
+    letter-spacing: -0.3px;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+
+  .colophon-tagline {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.65;
+    max-width: 420px;
+    margin: 0 auto 28px;
+  }
+
+  .colophon-rail {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .colophon-rail .rail-dot {
+    color: var(--border);
+    font-weight: 400;
+  }
+
+  .colophon-links {
+    display: flex;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+
+  .colophon-links a {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 2px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .colophon-links a:hover {
+    border-bottom-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .colophon-meta {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.75;
+    max-width: 420px;
+    margin: 0 auto;
+  }
+
+  .colophon-meta strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .colophon-meta a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .colophon-meta a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  @media (max-width: 600px) {
+    .colophon { padding: 44px 16px 56px; margin-top: 40px; }
+    .colophon-rail {
+      font-size: 9px;
+      letter-spacing: 1.6px;
+      gap: 8px;
+    }
+    .colophon-rail .rail-hide-mobile { display: none; }
+    .colophon-links { gap: 14px; }
+  }
+
   /* Changelog + Requests */
-  .page-footer { padding: 48px 0 80px; border-top: 1px solid var(--border); margin-top: 48px; }
+  .page-footer { padding: 48px 0 32px; margin-top: 48px; }
   .changelog { margin-bottom: 40px; }
   .changelog-entry {
     display: flex; gap: 14px; padding: 10px 0; align-items: center;
@@ -876,7 +1077,21 @@
 </head>
 <body>
 
-<!-- Site navigation (owner: @allierays) -->
+<!-- Editorial masthead -->
+<header class="masthead">
+  <div class="masthead-rail">
+    <span>The Cohort</span>
+    <span class="rail-dot">·</span>
+    <span>Spring 2026</span>
+    <span class="rail-dot rail-hide-mobile">·</span>
+    <span class="rail-hide-mobile">Claude Certified Architect</span>
+  </div>
+  <div class="masthead-main">
+    <a href="#page-header" class="masthead-wordmark">CCA Cohort</a>
+  </div>
+</header>
+
+<!-- Sticky navigation (owner: @allierays) -->
 <nav class="site-nav">
   <a href="#page-header" class="site-nav-brand">CCA Cohort</a>
   <button class="hamburger" aria-label="Menu" onclick="document.querySelector('.nav-links').classList.toggle('open')">
@@ -903,7 +1118,7 @@
 
   <div class="badge" id="badge"><span class="dot"></span> Spots Available</div>
 
-  <p class="intro-line" style="font-size: 14px; line-height: 1.6; color: var(--muted); margin-bottom: 16px; animation: fadeUp 0.7s ease-out 0.05s both;">I'm <a href="https://ejb.ventures" target="_blank" style="color:var(--ink);font-weight:700;text-decoration:none;">Eddie Belaval</a>, founder of <a href="https://id8labs.app" target="_blank" style="color:var(--ink);font-weight:600;text-decoration:none;">id8Labs</a> and a member of the Claude Partner Network. <a href="https://linkedin.com/in/eddiebelaval" target="_blank" style="color:var(--muted);text-decoration:none;font-size:12px;">LinkedIn</a></p>
+  <p class="intro-line" style="font-size: 14px; line-height: 1.6; color: var(--muted); margin-bottom: 16px; animation: fadeUp 0.7s ease-out 0.05s both;">I'm <a href="https://ejb.ventures" target="_blank" style="color:var(--ink);font-weight:700;text-decoration:none;">Eddie Belaval</a>, founder of <a href="https://id8labs.app" target="_blank" style="color:var(--ink);font-weight:600;text-decoration:none;">id8Labs</a> and a member of the Claude Partner Network. <a href="https://www.linkedin.com/in/eddiebelaval" target="_blank" style="color:var(--muted);text-decoration:none;font-size:12px;">LinkedIn</a></p>
 
   <h1>Get <span class="highlight">Claude Certified</span> with me.</h1>
 
@@ -1080,6 +1295,11 @@
   <details class="changelog">
     <summary class="section-label" style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">Changelog <span style="font-size:9px;color:var(--muted);font-weight:400;letter-spacing:0;">&#9660;</span></summary>
     <div class="changelog-entry">
+      <span class="changelog-date">May 1</span>
+      <span class="changelog-text">feat: editorial masthead, colophon, and paper texture pass</span>
+      <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
+    </div>
+    <div class="changelog-entry">
       <span class="changelog-date">Apr 21</span>
       <span class="changelog-text">feat: optional For Beginners onramp track</span>
       <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
@@ -1128,6 +1348,10 @@
       <span class="changelog-date">Apr 16</span>
       <span class="changelog-text">feat: contribution badges — every changelog entry now credits its author by git commit.</span>
       <span class="changelog-author" style="--author-color: var(--accent);">Eddie</span>
+    </div>
+    <div class="changelog-entry">
+      <span class="changelog-date">Apr 8</span>
+      <span class="changelog-text">feat: expand Pro Tips to 90 (3 months of daily content)</span>
     </div>
     <div class="changelog-entry">
       <span class="changelog-date">Apr 8</span>
@@ -1192,6 +1416,30 @@
     <a href="https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX" target="_blank" class="request-btn">Send Feedback in WhatsApp</a>
   </div>
 </div>
+
+<!-- Editorial colophon (sign-off, mirror to masthead) -->
+<footer class="colophon">
+  <div class="colophon-ornament">·&nbsp;·&nbsp;·</div>
+  <div class="colophon-wordmark">CCA Cohort</div>
+  <p class="colophon-tagline">A free study cohort for the Claude Certified Architect exam. Coursework is free, the certification is issued by Anthropic, and we sit the exam together in late June.</p>
+  <div class="colophon-rail">
+    <span>The Cohort</span>
+    <span class="rail-dot">·</span>
+    <span>Spring 2026</span>
+    <span class="rail-dot rail-hide-mobile">·</span>
+    <span class="rail-hide-mobile">Claude Certified Architect</span>
+  </div>
+  <div class="colophon-links">
+    <a href="https://chat.whatsapp.com/JWiZwzOwCx55MPnfxyuWCX" target="_blank" rel="noopener">WhatsApp Group</a>
+    <a href="https://github.com/eddiebelaval/cohort-page" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://www.linkedin.com/in/eddiebelaval" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="https://id8labs.app" target="_blank" rel="noopener">id8Labs</a>
+  </div>
+  <p class="colophon-meta">
+    Built by <a href="https://ejb.ventures" target="_blank" rel="noopener"><strong>Eddie Belaval</strong></a> at <a href="https://id8labs.app" target="_blank" rel="noopener"><strong>id8Labs</strong></a>.<br>
+    MIT licensed. Fork it, run your own cohort. &copy; 2026
+  </p>
+</footer>
 
 <script>
   // WhatsApp banner dismiss
